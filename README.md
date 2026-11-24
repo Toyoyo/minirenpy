@@ -423,7 +423,7 @@ with a patch to make it prefer DPMI over VCPI, making it compatible with VSBHDA.
 
 ---
 
-##
+## About the comments
 The comments in the code make multiple references to my own visual novels,
 some published, some not.
 Each of them was used to further refine the engine and find bugs or missing features.
