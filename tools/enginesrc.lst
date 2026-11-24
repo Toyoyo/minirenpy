@@ -1,0 +1,105 @@
+# The engine's portable modules: everything on the host side of src/plat.h.
+#
+# Read by two things that must not disagree about it -- tools/harness/run.sh,
+# which links it into every harness that needs the whole engine, and
+# probe/Makefile, which links it into the probes that load a real script.
+# It used to be spelled out in run.sh alone; probe/sccheck.c and
+# probe/stmtdump.c said "<parse chain>" in their build instructions and left
+# the reader to reconstruct it.
+#
+# A list like this going one entry short is not a loud failure. The harness
+# README records that it happened: the suite came back with "failures" that
+# were only a missing source, and a missing engine module presents as a link
+# error at best and as a stub being linked instead of the real thing at
+# worst (see vbedos.c, which compiles to three do-nothing functions off the
+# DOS target). One copy, therefore.
+#
+# Not here, and deliberately:
+#   main.c       linked by no harness and no probe; it is the frame loop
+#   platw32.c    the Win32 side of the seam; the host uses
+#                tools/hostshim/plathost.c
+#   present.c    likewise, with tools/hostshim for what a harness needs
+#                -- and for video that is tools/hostshim/presenthost.c, which
+#                run.sh links alongside movie.c the way it links wavehost.c
+#                alongside audio.c
+#   wavedos.c    compiles to a sink off the DOS target; harnesses drive
+#   vbedos.c     tools/hostshim/wavehost.c instead
+#
+# input.c and scale.c *are* here. They look like platform code and are not:
+# what a key or a click means is portable, and scale.c comes along for
+# mr_fit_map_point.
+#
+# One module per line. Blank lines and # comments are ignored; the readers
+# prepend src/ and append .c.
+
+save
+history
+serial
+stmtid
+expr
+interp
+scene
+vfs
+lex
+parse
+style
+slang
+slparse
+image
+png
+# CPUID, which gates both MMX kernels. Here, and *not* beside yuvmmx.c and
+# blendmmx.c in the "cannot be built on the host" list, because it genuinely
+# can be: it has a gcc path over <cpuid.h>. That matters -- the module now
+# standing between the engine and its two fast paths should not also be the
+# one nothing can link. gfx.c and yuv.c both call into it from have_simd().
+cpu
+gfx
+audio
+font
+ui
+# The composited dialogue strip, kept between typing frames. Here rather than
+# inside ui.c because the policy that decides when a strip is still good lives
+# in the frame loop, and bandtest drives both halves.
+bandcache
+slrender
+mp3impl
+# Video. plmimpl.c instantiates pl_mpeg and is C99 -- the makefiles give it
+# -za99, as they do mp3impl.c -- so it is a translation unit of its own.
+# yuv.c is the conversion and is pure; movie.c is the player and calls
+# mr_present_video, which is why presenthost.c exists.
+#
+# Two codecs, picked from the file's own bytes. viddec.c is the dispatch and
+# is the only thing movie.c includes; plmimpl.c is MPEG-1 in a program
+# stream, and avi.c plus xviddec.c are MPEG-4 in an AVI. See viddec.h for why
+# both are kept.
+#
+# **xviddec.c drags in xvidcore**, which no other harness needed and which is
+# not an engine source: run.sh builds it as a cached host library when it
+# sees this file in the list (mkxvidhost.sh), and the Makefile links the
+# Watcom one. That is the only entry here with a dependency outside src/.
+plmimpl
+avi
+xviddec
+viddec
+yuv
+movie
+# pack.c turns a 32bpp surface into the display's pixel format. It is here
+# because yuv.c calls mr_pack_is_bgra32: mr_yuv_rows_fused writes display
+# pixels straight into the framebuffer and has to ask whether that is sound
+# for the current format. Until then nothing portable needed it and only
+# packtest and the two presenters linked it -- the engine list going one
+# entry short is exactly the failure this file's header warns about, and it
+# presented as 53 harnesses failing to link at once.
+pack
+tl
+datefmt
+input
+scale
+md5
+persist
+musicroom
+pyfn
+rhythm
+list
+config
+ansi

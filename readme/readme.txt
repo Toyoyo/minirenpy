@@ -1,0 +1,335 @@
+                      - Minirenpy - DOS Version -
+                   https://github.com/Toyoyo/minirenpy
+
+This is minirenpy, a VN engine implementing a subset of ren'py, targetting
+Windows 3.1+win32s, NT3.1+ and DOS.
+
+I hope it works flawlessly on your hardware or emulator.
+
+It has been tested on:
+DOSBox-X, with sb1, sb2, sbpro1, sbpro2, sb16 sound cards.
+FreeDOS 1.4 on QEMU/KVM, JemmEx/Jemm386, AC97/HDA with VSBHDA 2.0.
+Real hardware, MS-DOS 7.10, HIMEM.SYS+EMM386.EXE, ESS1868 sound card.
+
+Everything should be working, including the rhythm mini-game.
+Obviously, the Window/Full Screen option in preferences is a no-op.
+
+1. Required configuration
+CPU:        PIII 550Mhz was the baseline for the tests. Faster is recommended.
+Memory:     ~300K of Conventional Memory under VCPI (HIMEM.SYS+EMM386.EXE).
+            ~100K of Conventional Memory under DPMI (HDPMI32i.EXE/JemmEx).
+            64MiB of XMS.
+Mouse:      A standard mouse driver, like CuteMouse.
+Sound Card: Any Sound Blaster compatible.
+            SB16 for a pleasant experience, without downsampling.
+            Or an ESS1868 card, as I happen to own one, so...
+            Explicitly tested on VSBHDA 2.0 under QEMU/KVM.
+Video:      Any VBE 2.0 Compatible card able to provide at least a 640x480x8
+            linear framebuffer.
+
+2. Running
+Simply run 'mrpydos.exe'
+The 'best' video mode should be selected (See 4.)
+
+The game's default language is french, you can switch to english by clicking
+the little flag on the title screen.
+
+3. Configuring
+Make sure your BLASTER environment variable is correct.
+
+mrpy.ini accepts a few configuration options, notably:
+depth=X      |  Force the colour depth. Ex: depth=32
+             |  8, 16, 24 and 32 all work.
+             |  depth=8 is the only way to ask for a 256-colour mode on a card
+             |  that offers better ones.
+vbemode=XXX  |  Force one specific VBE mode, ignoring all of section 4.
+             |  Use the mode numbers that MODES.EXE prints.
+             |  Ex: vbemode=0x112
+truecolour=1 |  Never use a 256-colour mode, even if that means the game
+             |  cannot start at all. Overrides depth=8.
+bilinear=1   |  Enable bilinear filtering.
+             |  Disable to increase framerate at the expense of quality.
+
+4. How the screen mode is chosen
+The game asks your video card for its list of modes and picks one. You do
+not have to configure anything; the settings above are only there for when
+you disagree with the choice.
+
+First, modes the game cannot use are thrown out.
+A mode has to be a colour graphics mode with a linear framebuffer, and your
+card has to report VESA VBE 2.0 or later.
+MODES.EXE lists every mode and, for each one it rejected, says why.
+
+Then the rest are ranked.
+Each rule below only settles the ties left by the rule above it:
+1. If you set depth=8, 256-colour modes are considered first.
+2. More than 256 colours beats 256 colours, even if it costs resolution.
+   640x480 in 16-bit is preferred to 1280x720 in 256 colours.
+3. The colour depth you asked for with depth=, if you set it.
+4. The biggest picture -- which is not the same as the biggest mode.
+   The game is 16:9, so in a 4:3 mode it is letterboxed: 1024x768 really shows
+   you 1024x576.
+   A mode bigger than 1280x720 is not worth anything extra, because that is
+   what the game draws internally and enlarging it only costs speed.
+5. The least letterboxing, between modes that show the same size picture.
+   1280x720 is prefered over and 1280x1024.
+6. The most colours, between modes that are otherwise identical. Some cards
+   offer the same resolution twice, as 32768 and as 65536 colours.
+7. The lowest mode number, so that the choice is always the same on the
+   same card.
+
+          - minirenpy - mrpy.ini settings and environment variables -         
+
+Every setting the engine reads, what it does, and what it does if you say
+nothing. You do not have to write any of them: the built-in defaults are a
+working configuration, and most people never need this file at all.
+
+1. The file
+It is called mrpy.ini and it is read from the directory you start the game
+in, which is normally the one the .exe sits in. If it is not there the game
+starts with the defaults and says so in log.txt.
+
+The settings must be under a [minirenpy] header, like this:
+
+    [minirenpy]
+    bilinear=1
+    movie=0
+
+A line starting with ';' or '#' is a comment. There is no comment at the
+end of a line -- everything after the '=' is the value, so a ';' in a file
+name is kept rather than cut off. Names are not case sensitive. If you
+write the same setting twice, the last one wins. At most 32 settings are
+read.
+
+A number out of range, or not a number at all, is not an error and does not
+stop the game: the setting goes back to its default and log.txt says so.
+Numbers are decimal unless you write 0x in front, which is there so the
+mode numbers MODES.EXE prints can be typed in as printed.
+
+Anything the engine does not recognise is ignored, and so is any other
+section, so a game may keep its own settings in the same file.
+
+2. Settings for both versions
+
+pak=NAME          |  The archive to load the game out of.
+                  |  Defaults to the one built for this game, so there is
+                  |  normally no reason to set it.
+
+bilinear=1        |  Smooth the picture when it is scaled to your screen,
+                  |  instead of picking the nearest pixel.
+                  |  Off by default. Better looking, slower.
+
+fps=N             |  How many times a second to draw, between 10 and 200.
+                  |  60 by default, or whatever the game asks for.
+                  |  This is a ceiling and not a promise: a machine that
+                  |  cannot draw that fast simply draws as fast as it can,
+                  |  and nothing runs at the wrong speed either way --
+                  |  scene changes and movements take the same time
+                  |  whatever this is, and are only drawn at more or
+                  |  fewer positions on the way.
+                  |  Worth changing in one case: fps=30 on a slow machine,
+                  |  which leaves it more time for sound and less for
+                  |  drawing. Try it first if the sound breaks up.
+                  |  Raising it above 60 is unlikely to be visible.
+
+simd=0            |  Do not use the MMX routines, even on a processor that
+                  |  has them. Everything still works, a little slower.
+                  |  The default is simd=1: use them if, and only if, the
+                  |  processor reports MMX. On a processor without it they
+                  |  are never used whatever you write here.
+                  |  simd=2 forces them on without asking. Do not use this
+                  |  unless you know the detection is wrong about your
+                  |  machine: on a processor that really has no MMX it
+                  |  crashes the game on the first frame.
+
+movie=0           |  Do not play video cutscenes. Instead the first frame
+                  |  of the video is held on screen with its soundtrack,
+                  |  for as long as the video would have run.
+                  |  The way out if a cutscene stutters, or runs the
+                  |  machine too hard, on an otherwise fine game.
+                  |  Video is played by default.
+
+movie_latency_ms= |  How far ahead the sound is buffered during a cutscene,
+                  |  in milliseconds. 400 by default.
+                  |  The picture follows the sound that has actually been
+                  |  played, so the lower this is the sooner the picture
+                  |  reacts -- and the likelier the sound is to break up.
+                  |  Raise it if a cutscene's sound breaks up. 0 leaves the
+                  |  game's normal, much deeper, buffering alone.
+
+rhythm_latency_ms=|  The same, for the rhythm mini-game, where it decides
+                  |  how late a hit sound arrives. 140 by default.
+                  |  Raise it only if the mini-game's audio breaks up: the
+                  |  higher it is, the further the sound lags the key you
+                  |  pressed.
+
+scriptcheck=1     |  Check the game's script for errors while it runs and
+                  |  write what it finds to log.txt. Off by default.
+                  |  This is for people working on a game, not for playing
+                  |  one; it does not make anything more reliable.
+
+3. Settings for the Windows version only
+
+width=N           |  The window size, in pixels. 640 by 360 by default.
+height=N          |  The picture is always drawn at 1280x720 inside the
+                  |  game and scaled to fit, so a bigger window costs
+                  |  speed and a smaller one costs detail, but neither
+                  |  changes what you can see.
+
+dib16=0           |  How the finished picture is handed to Windows, on a
+                  |  display set to 16-bit colour. It does nothing at any
+                  |  other colour depth.
+                  |  The default, dib16=2, sends 16-bit pixels in the
+                  |  5-5-5 layout, which is the one a display driver that
+                  |  takes 16-bit pictures at all has to accept. dib16=1
+                  |  sends 5-6-5, which has one more step of green but is
+                  |  optional for the driver, and dib16=0 sends 24-bit
+                  |  pixels, which is slower and always correct.
+                  |  If the colours are wrong -- a red sky, a green face --
+                  |  try 1, then 0. log.txt records what was asked for and
+                  |  what the display's own layout is.
+
+dither=0          |  Turn off dithering. On by default, and it only does
+                  |  anything on a display showing fewer than 16 million
+                  |  colours, where it trades a faint grain for smooth
+                  |  gradients instead of visible banding.
+
+4. Settings for the DOS version only
+
+depth=X           |  Force the colour depth. 8, 16, 24 and 32 all work.
+                  |  depth=8 is the only way to ask for a 256-colour mode
+                  |  on a card that offers better ones.
+                  |  By default the game picks for itself.
+
+vbemode=XXX       |  Force one specific VBE mode and ignore every rule the
+                  |  game would otherwise apply. Use the mode numbers that
+                  |  MODES.EXE prints. Ex: vbemode=0x112
+
+truecolour=1      |  Never use a 256-colour mode, even if that means the
+                  |  game cannot start at all. Overrides depth=8.
+
+border=PATH       |  The picture put in the black bars above and below the
+                  |  game in a 4:3 screen mode. Defaults to the one the
+                  |  game ships, gui/dosborder.png. A 16:9 mode has no
+                  |  bars and ignores this.
+
+mousespeed=N      |  Mouse speed as a percentage. 100 is the default, 50
+                  |  is half as fast, 200 twice.
+
+dpmilock=0        |  Do not ask the memory manager to lock the game in
+                  |  memory at startup. Locking is on by default and is
+                  |  there to stop a sound interrupt touching memory that
+                  |  has been paged out.
+                  |  Set this if the game will not start on a machine with
+                  |  little memory free: locking asks for 9MB before
+                  |  anything else has run, and not every memory manager
+                  |  handles that well.
+
+essnative=0       |  Use the Sound Blaster Pro compatibility of an ESS
+                  |  card instead of the card's own 16-bit mode.
+                  |  The native mode is on by default and sounds better.
+                  |  Set this if your ESS card is silent or distorted.
+                  |  It has no effect on any other make of card.
+
+audiogain=N       |  Playback volume as a percentage, between 10 and 1000.
+                  |  The default depends on the card: 100 where the mixer's
+                  |  output is sent as it is, 200 where it has to be
+                  |  converted for an older card, which otherwise comes out
+                  |  quieter.
+                  |  Too high a value distorts the loud parts.
+
+audiodither=0     |  Turn off dithering when the sound has to be reduced
+                  |  to 8 bits for an older card. On by default; it trades
+                  |  a faint hiss for much less of the grainy edge 8-bit
+                  |  sound otherwise has. No effect on a 16-bit card.
+
+audiotone=1       |  Play a continuous test tone instead of the game's
+                  |  sound. For working out whether a card is configured
+                  |  correctly when nothing can be heard. Off by default.
+
+5. Environment variables
+These are not settings. They are switches for looking into a problem, and
+all but the last one make the game slower, noisier in log.txt, or both.
+Nothing here improves anything; set them when something is wrong and you
+want to find out what, or when somebody has asked you for a particular
+log, and unset them afterwards.
+
+The ones written below without an '=' are switches: any value turns them
+on, so 1 is as good as anything, and what matters is only that they are
+set at all. The ones written with an '=' need the value given.
+
+They are set before the game starts:
+
+    DOS       set MR_PROF=1
+              mrpydos.exe
+
+    Windows   set them at the DOS prompt before typing WIN, or put them
+              in AUTOEXEC.BAT. Windows hands its environment to the
+              programs it runs, so there is nowhere else to put them.
+
+MR_PROF           |  Time each stage of drawing a frame and write the
+                  |  figures to log.txt. The first thing to set if the
+                  |  game is slower than it should be.
+
+MR_STATS          |  Write how much work laying out each screen costs to
+                  |  log.txt. Goes with MR_PROF when it is a menu rather
+                  |  than the story that is slow.
+
+MR_LAYOUT         |  Write the position and size of everything on the
+                  |  next screen to log.txt. For "this button is in the
+                  |  wrong place".
+
+MR_ROLLTRACE      |  One line in log.txt for every rollback and roll
+                  |  forward. For "rolling back showed me the wrong
+                  |  thing": the last dozen lines before it went wrong
+                  |  are the ones that matter.
+
+MR_REDRAWPROBE    |  Check, every frame, that the part of the screen the
+                  |  game decided not to redraw really had not changed.
+                  |  For "part of the picture is stale".
+                  |  Needs MR_PROF set as well, and says so in log.txt if
+                  |  it is not. It is expensive enough that it makes every
+                  |  timing in the same run meaningless -- the counts it
+                  |  prints are the measurement, not the milliseconds.
+
+MR_LABEL=NAME     |  Start at a named point in the story instead of the
+                  |  main menu. For reaching a late scene without playing
+                  |  back to it. An unknown name leaves the game sitting
+                  |  at nothing, so it has to be one the script really
+                  |  has.
+
+MR_SCREEN=NAME    |  Open straight onto one of the menu screens, by name:
+                  |  preferences, save, load, history, about.
+
+MR_SKIP_SPLASHSCREEN
+                  |  Skip the opening cutscene. MR_LABEL skips it anyway.
+                  |  The same variable Ren'Py itself uses, under our own
+                  |  name.
+
+MR_BPP=N          |  Windows only. Pretend the display is N bits per
+                  |  pixel. MR_BPP=8 is the useful one: it reproduces what
+                  |  a 256-colour Windows 3.1 sees, on a machine that is
+                  |  not in a 256-colour mode.
+                  |  It changes how the picture is prepared, not what the
+                  |  display is actually set to, so the colours on screen
+                  |  will be wrong unless the two agree.
+
+BLASTER           |  DOS only, and the one variable here that is not ours
+                  |  and is not optional. It is how every DOS program
+                  |  learns where your sound card is, and your sound
+                  |  driver or AUTOEXEC.BAT normally sets it already:
+                  |      set BLASTER=A220 I5 D1 H5 P330 T6
+                  |  A is the address, I the interrupt, D the 8-bit DMA
+                  |  channel, H the 16-bit one. The game reads the letters
+                  |  in any order and ignores what it does not need.
+                  |  If it is not set, the game starts silent and says so
+                  |  in log.txt.
+
+6. If something looks or sounds wrong
+log.txt is written next to the .exe every time the game runs, and it
+records which settings were read, which screen mode and sound card were
+chosen, and why. It is the first thing to look at, and the first thing to
+send if you report a problem.
+
+It is replaced each run, so copy it before starting the game again if it
+has something in it you want to keep.

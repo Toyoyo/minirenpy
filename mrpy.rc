@@ -1,0 +1,26 @@
+1 VERSIONINFO
+FILEVERSION 0,1,0,0
+PRODUCTVERSION 0,1,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "FileDescription", "Minirenpy"
+      VALUE "FileVersion", "0.1.0"
+      VALUE "InternalName", "Minirenpy"
+      VALUE "OriginalFilename", "mrpy.exe"
+      VALUE "ProductName", "Minirenpy"
+      VALUE "ProductVersion", "0.1.0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
+
+/* Named, not numbered: main.c registers the window class with
+ * LoadIcon(inst, "APPICON"), and a numeric 0 could not be loaded that way in
+ * any case -- MAKEINTRESOURCE(0) is a null pointer. */
+APPICON ICON "rsc/icon.ico"

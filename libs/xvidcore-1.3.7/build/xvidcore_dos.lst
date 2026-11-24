@@ -1,0 +1,703 @@
+_BitstreamReadHeaders../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/bitstream.c
+_BitstreamWriteEndOfSequence../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/bitstream.c
+_BitstreamWriteGroupOfVopHeader../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/bitstream.c
+_BitstreamWriteUserData../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/bitstream.c
+_BitstreamWriteVolHeader../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/bitstream.c
+_BitstreamWriteVopHeader../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/bitstream.c
+_CodeCoeffInter_CalcBits../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_CodeCoeffIntra_CalcBits../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_FullRefine_Fast../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_MBCoding../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_MBCodingBVOP../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_MBFieldTest../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mbtransquant.c
+_MBFieldTest_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mbtransquant.c
+_MBFrameToField../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mbtransquant.c
+_MBMotionCompensation../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/motion_comp.c
+_MBMotionCompensationBVOP../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/motion_comp.c
+_MBPrediction../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/prediction/mbprediction.c
+_MBTransQuantInter../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mbtransquant.c
+_MBTransQuantInterBVOP../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mbtransquant.c
+_MBTransQuantIntra../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mbtransquant.c
+_TMNMVtab0../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_TMNMVtab1../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_TMNMVtab2../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_abgr_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_abgr_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_abgri_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_abgri_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_add_acdc../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/prediction/mbprediction.c
+_add_noise../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_argb_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_argb_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_argbi_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_argbi_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_bgr_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_bgr_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_bgra_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_bgra_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_bgrai_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_bgrai_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_bgri_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_bgri_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_blocksum8../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_blocksum8_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_bs_get_spritetrajectory../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_bs_put_spritetrajectory../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_calc_cbp../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/cbp.c
+_calc_cbp_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/cbp.c
+_calc_cbp_plain../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/cbp.c
+_cbpy_table../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_check_resync_marker../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_coeff8_energy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_coeff8_energy_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_coeff_tab../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_colorspace_init../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_dc_lum_tab../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_dc_threshold../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_dcc_tab../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_dcy_tab../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_deblock8x8_h../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_deblock8x8_v../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_decoder_create../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/decoder.c
+_decoder_decode../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/decoder.c
+_decoder_destroy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/decoder.c
+_dequant_h263_inter../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_h263.c
+_dequant_h263_inter_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_h263.c
+_dequant_h263_intra../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_h263.c
+_dequant_h263_intra_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_h263.c
+_dequant_mpeg_inter../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_mpeg.c
+_dequant_mpeg_inter_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_mpeg.c
+_dequant_mpeg_intra../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_mpeg.c
+_dequant_mpeg_intra_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_mpeg.c
+_dev16../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_dev16_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_emms../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/emms.c
+_emms_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/emms.c
+_enc_create../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/build/win32/enc_stubs.c
+_enc_destroy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/build/win32/enc_stubs.c
+_enc_encode../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/build/win32/enc_stubs.c
+_fdct../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/dct/fdct.c
+_fdct_int32../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/dct/fdct.c
+_generate_GMCimage../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/gmc.c
+_generate_GMCparameters../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/gmc.c
+_getMinFcode../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_get_cbpy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_dc_dif../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_dc_size_chrom../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_dc_size_lum../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_default_inter_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_get_default_intra_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_get_inter_block_h263../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_inter_block_mpeg../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_inter_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_get_intra_block../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_intra_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_get_mcbpc_inter../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_mcbpc_intra../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_mv../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_get_pmv2../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/prediction/mbprediction.c
+_get_pmv2_interlaced../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/prediction/mbprediction.c
+_get_qpmv2../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/prediction/mbprediction.c
+_idct../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/dct/idct.c
+_idct_int32../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/dct/idct.c
+_image_block_variance../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_brightness../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_image_brightness_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_image_chroma_optimize../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_clear../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_copy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_create../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_destroy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_dump_yuvpgm../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_input../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_interpolate../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_mad../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_output../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_postproc../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_image_printf../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/font.c
+_image_psnr../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_setedges../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_image_swap../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_init_GMC../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/gmc.c
+_init_deblock../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_init_intra_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_init_mpeg_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_init_noise../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_init_postproc../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_init_vlc_tables../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_interpolate16x16_lowpass_h../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate16x16_lowpass_h_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate16x16_lowpass_hv../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate16x16_lowpass_hv_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate16x16_lowpass_v../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate16x16_lowpass_v_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x4_halfpel_h../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x4_halfpel_h_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x4_halfpel_hv../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x4_halfpel_hv_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x4_halfpel_v../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x4_halfpel_v_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_6tap_lowpass_h../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_6tap_lowpass_h_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_6tap_lowpass_v../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_6tap_lowpass_v_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_avg2../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_avg2_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_avg4../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_avg4_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_add../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_add_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_h../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_h_add../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_h_add_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_h_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_hv../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_hv_add../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_hv_add_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_hv_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_v../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_v_add../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_v_add_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_halfpel_v_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_lowpass_h../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_lowpass_h_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_lowpass_hv../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_lowpass_hv_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_lowpass_v../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_interpolate8x8_lowpass_v_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c
+_is_custom_inter_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_is_custom_intra_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_max_level../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_max_run../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_mb_motion_table../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_mcbpc_inter_tab../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_mcbpc_inter_table../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_mcbpc_intra_tab../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_mcbpc_intra_table../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_mrsad16_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_output_slice../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_plane_sse../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_predict_acdc../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/prediction/mbprediction.c
+_quant_h263_inter../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_h263.c
+_quant_h263_inter_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_h263.c
+_quant_h263_intra../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_h263.c
+_quant_h263_intra_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_h263.c
+_quant_mpeg_inter../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_mpeg.c
+_quant_mpeg_inter_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_mpeg.c
+_quant_mpeg_intra../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_mpeg.c
+_quant_mpeg_intra_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_mpeg.c
+_read_video_packet_header../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/bitstream.c
+_rgb555_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgb555_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgb555i_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgb555i_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgb565_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgb565_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgb565i_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgb565i_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgb_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgb_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgba_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgba_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgbai_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgbai_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgbi_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_rgbi_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_roundtab../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_roundtab_76../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_roundtab_78../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_roundtab_79../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_sad16../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad16_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad16bi../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad16bi_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad16v../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad16v_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad32v_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad8../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad8_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad8bi../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sad8bi_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sadInit../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_set_inter_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_set_intra_matrix../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c
+_sprite_trajectory_code../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_sprite_trajectory_len../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_sse8_16bit../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sse8_16bit_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sse8_8bit../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sse8_8bit_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sse_to_PSNR../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_sseh8_16bit../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_sseh8_16bit_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c
+_stripe_deblock_h../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_stripe_deblock_v../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c
+_transfer8x4_copy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer8x4_copy_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer8x8_copy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer8x8_copy_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_16to8add../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_16to8add_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_16to8copy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_16to8copy_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16copy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16copy_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16sub../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16sub2../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16sub2_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16sub2ro../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16sub2ro_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16sub_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16subro../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_transfer_8to16subro_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c
+_uyvy_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_uyvy_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_uyvyi_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_uyvyi_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_write_video_packet_header../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/bitstream.c
+_xvid_Init_QP../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/qpel.c
+_xvid_QP_Add_Funcs../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/qpel.c
+_xvid_QP_Add_Funcs_C../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/qpel.c
+_xvid_QP_Add_Funcs_C_ref../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/qpel.c
+_xvid_QP_Funcs../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/qpel.c
+_xvid_QP_Funcs_C../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/qpel.c
+_xvid_QP_Funcs_C_ref../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/qpel.c
+_xvid_cbpy_tab../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c
+_xvid_decore../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/xvid.c
+_xvid_encore../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/xvid.c
+_xvid_free../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_align.c
+_xvid_global../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/xvid.c
+_xvid_image_deinterlace../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c
+_xvid_malloc../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_align.c
+_xvid_me_AdvDiamondSearch../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_xvid_me_ChromaSAD../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_xvid_me_DiamondSearch../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_xvid_me_SquareSearch../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_xvid_me_SubpelRefine../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_xvid_me_interpolate16x16qpel../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_xvid_me_interpolate8x8qpel../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_xvid_me_lambda_vec16../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c
+_yuyv_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yuyv_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yuyvi_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yuyvi_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_abgr../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_abgr_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_abgri../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_abgri_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_argb../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_argb_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_argbi../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_argbi_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_bgr../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_bgr_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_bgra../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_bgra_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_bgrai../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_bgrai_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_bgri../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_bgri_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb555../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb555_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb555i../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb555i_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb565../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb565_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb565i../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb565i_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgb_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgba../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgba_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgbai../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgbai_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgbi../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_rgbi_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_uyvy../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_uyvy_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_uyvyi../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_uyvyi_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_yuyv../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_yuyv_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_yuyvi../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_yuyvi_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_yv12../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+_yv12_to_yv12_c../home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/xvid.c Offset=00000200H
+    _xvid_decore
+    _xvid_encore
+    _xvid_global
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/decoder.c Offset=00003000H
+    _decoder_create
+    _decoder_decode
+    _decoder_destroy
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/bitstream.c Offset=0000ac00H
+    _BitstreamReadHeaders
+    _BitstreamWriteEndOfSequence
+    _BitstreamWriteGroupOfVopHeader
+    _BitstreamWriteUserData
+    _BitstreamWriteVolHeader
+    _BitstreamWriteVopHeader
+    _read_video_packet_header
+    _write_video_packet_header
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/cbp.c Offset=0000fc00H
+    _calc_cbp
+    _calc_cbp_c
+    _calc_cbp_plain
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/bitstream/mbcoding.c Offset=00010000H
+    _CodeCoeffInter_CalcBits
+    _CodeCoeffIntra_CalcBits
+    _MBCoding
+    _MBCodingBVOP
+    _TMNMVtab0
+    _TMNMVtab1
+    _TMNMVtab2
+    _bs_get_spritetrajectory
+    _bs_put_spritetrajectory
+    _cbpy_table
+    _check_resync_marker
+    _coeff_tab
+    _dc_lum_tab
+    _dc_threshold
+    _dcc_tab
+    _dcy_tab
+    _get_cbpy
+    _get_dc_dif
+    _get_dc_size_chrom
+    _get_dc_size_lum
+    _get_inter_block_h263
+    _get_inter_block_mpeg
+    _get_intra_block
+    _get_mcbpc_inter
+    _get_mcbpc_intra
+    _get_mv
+    _init_vlc_tables
+    _max_level
+    _max_run
+    _mb_motion_table
+    _mcbpc_inter_tab
+    _mcbpc_inter_table
+    _mcbpc_intra_tab
+    _mcbpc_intra_table
+    _sprite_trajectory_code
+    _sprite_trajectory_len
+    _xvid_cbpy_tab
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/dct/idct.c Offset=00018200H
+    _idct
+    _idct_int32
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/dct/fdct.c Offset=00019000H
+    _fdct
+    _fdct_int32
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/gmc.c Offset=00019800H
+    _generate_GMCimage
+    _generate_GMCparameters
+    _init_GMC
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/motion_comp.c Offset=0001b000H
+    _MBMotionCompensation
+    _MBMotionCompensationBVOP
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/estimation_common.c Offset=0001da00H
+    _FullRefine_Fast
+    _getMinFcode
+    _roundtab
+    _roundtab_76
+    _roundtab_78
+    _roundtab_79
+    _xvid_me_AdvDiamondSearch
+    _xvid_me_ChromaSAD
+    _xvid_me_DiamondSearch
+    _xvid_me_SquareSearch
+    _xvid_me_SubpelRefine
+    _xvid_me_interpolate16x16qpel
+    _xvid_me_interpolate8x8qpel
+    _xvid_me_lambda_vec16
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/motion/sad.c Offset=0001fe00H
+    _blocksum8
+    _blocksum8_c
+    _coeff8_energy
+    _coeff8_energy_c
+    _dev16
+    _dev16_c
+    _mrsad16_c
+    _sad16
+    _sad16_c
+    _sad16bi
+    _sad16bi_c
+    _sad16v
+    _sad16v_c
+    _sad32v_c
+    _sad8
+    _sad8_c
+    _sad8bi
+    _sad8bi_c
+    _sadInit
+    _sse8_16bit
+    _sse8_16bit_c
+    _sse8_8bit
+    _sse8_8bit_c
+    _sseh8_16bit
+    _sseh8_16bit_c
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/colorspace.c Offset=00021000H
+    _abgr_to_yv12
+    _abgr_to_yv12_c
+    _abgri_to_yv12
+    _abgri_to_yv12_c
+    _argb_to_yv12
+    _argb_to_yv12_c
+    _argbi_to_yv12
+    _argbi_to_yv12_c
+    _bgr_to_yv12
+    _bgr_to_yv12_c
+    _bgra_to_yv12
+    _bgra_to_yv12_c
+    _bgrai_to_yv12
+    _bgrai_to_yv12_c
+    _bgri_to_yv12
+    _bgri_to_yv12_c
+    _colorspace_init
+    _rgb555_to_yv12
+    _rgb555_to_yv12_c
+    _rgb555i_to_yv12
+    _rgb555i_to_yv12_c
+    _rgb565_to_yv12
+    _rgb565_to_yv12_c
+    _rgb565i_to_yv12
+    _rgb565i_to_yv12_c
+    _rgb_to_yv12
+    _rgb_to_yv12_c
+    _rgba_to_yv12
+    _rgba_to_yv12_c
+    _rgbai_to_yv12
+    _rgbai_to_yv12_c
+    _rgbi_to_yv12
+    _rgbi_to_yv12_c
+    _uyvy_to_yv12
+    _uyvy_to_yv12_c
+    _uyvyi_to_yv12
+    _uyvyi_to_yv12_c
+    _yuyv_to_yv12
+    _yuyv_to_yv12_c
+    _yuyvi_to_yv12
+    _yuyvi_to_yv12_c
+    _yv12_to_abgr
+    _yv12_to_abgr_c
+    _yv12_to_abgri
+    _yv12_to_abgri_c
+    _yv12_to_argb
+    _yv12_to_argb_c
+    _yv12_to_argbi
+    _yv12_to_argbi_c
+    _yv12_to_bgr
+    _yv12_to_bgr_c
+    _yv12_to_bgra
+    _yv12_to_bgra_c
+    _yv12_to_bgrai
+    _yv12_to_bgrai_c
+    _yv12_to_bgri
+    _yv12_to_bgri_c
+    _yv12_to_rgb
+    _yv12_to_rgb555
+    _yv12_to_rgb555_c
+    _yv12_to_rgb555i
+    _yv12_to_rgb555i_c
+    _yv12_to_rgb565
+    _yv12_to_rgb565_c
+    _yv12_to_rgb565i
+    _yv12_to_rgb565i_c
+    _yv12_to_rgb_c
+    _yv12_to_rgba
+    _yv12_to_rgba_c
+    _yv12_to_rgbai
+    _yv12_to_rgbai_c
+    _yv12_to_rgbi
+    _yv12_to_rgbi_c
+    _yv12_to_uyvy
+    _yv12_to_uyvy_c
+    _yv12_to_uyvyi
+    _yv12_to_uyvyi_c
+    _yv12_to_yuyv
+    _yv12_to_yuyv_c
+    _yv12_to_yuyvi
+    _yv12_to_yuyvi_c
+    _yv12_to_yv12
+    _yv12_to_yv12_c
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/image.c Offset=00030200H
+    _image_block_variance
+    _image_chroma_optimize
+    _image_clear
+    _image_copy
+    _image_create
+    _image_destroy
+    _image_dump_yuvpgm
+    _image_input
+    _image_interpolate
+    _image_mad
+    _image_output
+    _image_psnr
+    _image_setedges
+    _image_swap
+    _output_slice
+    _plane_sse
+    _sse_to_PSNR
+    _xvid_image_deinterlace
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/interpolate8x8.c Offset=00033e00H
+    _interpolate16x16_lowpass_h
+    _interpolate16x16_lowpass_h_c
+    _interpolate16x16_lowpass_hv
+    _interpolate16x16_lowpass_hv_c
+    _interpolate16x16_lowpass_v
+    _interpolate16x16_lowpass_v_c
+    _interpolate8x4_halfpel_h
+    _interpolate8x4_halfpel_h_c
+    _interpolate8x4_halfpel_hv
+    _interpolate8x4_halfpel_hv_c
+    _interpolate8x4_halfpel_v
+    _interpolate8x4_halfpel_v_c
+    _interpolate8x8_6tap_lowpass_h
+    _interpolate8x8_6tap_lowpass_h_c
+    _interpolate8x8_6tap_lowpass_v
+    _interpolate8x8_6tap_lowpass_v_c
+    _interpolate8x8_avg2
+    _interpolate8x8_avg2_c
+    _interpolate8x8_avg4
+    _interpolate8x8_avg4_c
+    _interpolate8x8_halfpel_add
+    _interpolate8x8_halfpel_add_c
+    _interpolate8x8_halfpel_h
+    _interpolate8x8_halfpel_h_add
+    _interpolate8x8_halfpel_h_add_c
+    _interpolate8x8_halfpel_h_c
+    _interpolate8x8_halfpel_hv
+    _interpolate8x8_halfpel_hv_add
+    _interpolate8x8_halfpel_hv_add_c
+    _interpolate8x8_halfpel_hv_c
+    _interpolate8x8_halfpel_v
+    _interpolate8x8_halfpel_v_add
+    _interpolate8x8_halfpel_v_add_c
+    _interpolate8x8_halfpel_v_c
+    _interpolate8x8_lowpass_h
+    _interpolate8x8_lowpass_h_c
+    _interpolate8x8_lowpass_hv
+    _interpolate8x8_lowpass_hv_c
+    _interpolate8x8_lowpass_v
+    _interpolate8x8_lowpass_v_c
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/qpel.c Offset=00039000H
+    _xvid_Init_QP
+    _xvid_QP_Add_Funcs
+    _xvid_QP_Add_Funcs_C
+    _xvid_QP_Add_Funcs_C_ref
+    _xvid_QP_Funcs
+    _xvid_QP_Funcs_C
+    _xvid_QP_Funcs_C_ref
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/postprocessing.c Offset=00048e00H
+    _add_noise
+    _deblock8x8_h
+    _deblock8x8_v
+    _image_brightness
+    _image_brightness_c
+    _image_postproc
+    _init_deblock
+    _init_noise
+    _init_postproc
+    _stripe_deblock_h
+    _stripe_deblock_v
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/image/font.c Offset=00056000H
+    _image_printf
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_align.c Offset=00056e00H
+    _xvid_free
+    _xvid_malloc
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/emms.c Offset=00057200H
+    _emms
+    _emms_c
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mbtransquant.c Offset=00057600H
+    _MBFieldTest
+    _MBFieldTest_c
+    _MBFrameToField
+    _MBTransQuantInter
+    _MBTransQuantInterBVOP
+    _MBTransQuantIntra
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/utils/mem_transfer.c Offset=0005b600H
+    _transfer8x4_copy
+    _transfer8x4_copy_c
+    _transfer8x8_copy
+    _transfer8x8_copy_c
+    _transfer_16to8add
+    _transfer_16to8add_c
+    _transfer_16to8copy
+    _transfer_16to8copy_c
+    _transfer_8to16copy
+    _transfer_8to16copy_c
+    _transfer_8to16sub
+    _transfer_8to16sub2
+    _transfer_8to16sub2_c
+    _transfer_8to16sub2ro
+    _transfer_8to16sub2ro_c
+    _transfer_8to16sub_c
+    _transfer_8to16subro
+    _transfer_8to16subro_c
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/prediction/mbprediction.c Offset=0005c000H
+    _MBPrediction
+    _add_acdc
+    _get_pmv2
+    _get_pmv2_interlaced
+    _get_qpmv2
+    _predict_acdc
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_mpeg.c Offset=0005e600H
+    _dequant_mpeg_inter
+    _dequant_mpeg_inter_c
+    _dequant_mpeg_intra
+    _dequant_mpeg_intra_c
+    _quant_mpeg_inter
+    _quant_mpeg_inter_c
+    _quant_mpeg_intra
+    _quant_mpeg_intra_c
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_matrix.c Offset=0005f000H
+    _get_default_inter_matrix
+    _get_default_intra_matrix
+    _get_inter_matrix
+    _get_intra_matrix
+    _init_intra_matrix
+    _init_mpeg_matrix
+    _is_custom_inter_matrix
+    _is_custom_intra_matrix
+    _set_inter_matrix
+    _set_intra_matrix
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/src/quant/quant_h263.c Offset=0005f800H
+    _dequant_h263_inter
+    _dequant_h263_inter_c
+    _dequant_h263_intra
+    _dequant_h263_intra_c
+    _quant_h263_inter
+    _quant_h263_inter_c
+    _quant_h263_intra
+    _quant_h263_intra_c
+ 
+/home/fosco/src/minirenpy/minirenpy-video/libs/xvidcore-1.3.7/build/win32/enc_stubs.c Offset=00060000H
+    _enc_create
+    _enc_destroy
+    _enc_encode
+ 

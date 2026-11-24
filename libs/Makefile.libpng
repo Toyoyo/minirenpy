@@ -1,0 +1,36 @@
+# Open Watcom Makefile for libpng
+# Builds libpng.lib for Win32.
+#
+# libpng ships no Watcom makefile, so this is ours. It lives in libs/ rather
+# than in the library tree and is copied in by the top-level Makefile's
+# `libpng` target, so that dropping in a new libpng release cannot silently
+# take it away with the old tree.
+#
+# -6r is not optional: it has to match the top-level CFLAGS, because register
+# calling is an ABI and half a build using it does not link. See the note
+# about PNG_API_RULE in the top-level Makefile, which is the other half of
+# making libpng agree with it.
+
+ZLIB = ../zlib-1.4
+
+CC = wcc386
+CFLAGS = -w4 -e25 -zq -otexan -d1 -6r -bt=nt -mf -ox -i=$(ZLIB)
+
+LIBR = wlib
+LIBFLAGS = -b -c -n -q -p=512
+
+OBJS = png.o pngerror.o pngget.o pngmem.o pngpread.o &
+       pngread.o pngrio.o pngrtran.o pngrutil.o pngset.o &
+       pngtrans.o pngwio.o pngwrite.o pngwtran.o pngwutil.o
+
+all: libpng.lib
+
+libpng.lib: $(OBJS)
+	$(LIBR) $(LIBFLAGS) $@ $(OBJS)
+
+.c.o:
+	$(CC) $(CFLAGS) $<
+
+clean: .SYMBOLIC
+	rm -f *.o *.err
+	rm -f libpng.lib

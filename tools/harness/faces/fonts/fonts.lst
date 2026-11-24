@@ -1,0 +1,10 @@
+# baked by tools/mkfont.py
+# <size>, or: face <slug> <size> <font file named by gui.*>
+14
+22
+26
+30
+face dejavuserif 14 DejaVuSerif.ttf
+face dejavuserif 22 DejaVuSerif.ttf
+face dejavuserif 26 DejaVuSerif.ttf
+face dejavuserif 30 DejaVuSerif.ttf

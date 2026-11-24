@@ -1,0 +1,777 @@
+# Open Watcom 2.0 makefile for the DOS target.
+#
+#     wmake -f Makefile.dos            both of the below (the default)
+#     wmake -f Makefile.dos game       the game
+#     wmake -f Makefile.dos modes      MODES.EXE, the VBE mode lister
+#     wmake -f Makefile.dos check      just the DOS-only files, compiled
+#     wmake -f Makefile.dos clean
+#
+# Both targets are verified: the game runs on DOS 7.10 hardware, on FreeDOS
+# under QEMU and under DOSBox-X. This file began as a proposal written by
+# reading the Win32 Makefile beside it, and the flags below have since been
+# run.
+#
+# The extender it links against is DOS/32A. `Makefile.cw` is this same file
+# with five values overridden for CauseWay -- not a copy of it; see the note
+# above LSYSTEM for which macros are parameterised and why the objects are
+# deliberately not among them.
+#
+# MODES.EXE links src/vbe.c and src/vbedos.c and nothing else, which makes
+# it both a useful tool on the target -- it prints every mode the BIOS
+# offers and, for each one refused, the reason -- and the smallest possible
+# check that the toolchain, the extender, the DPMI calls and the real-mode
+# scratch buffer all work.
+#
+# Build on Linux with the Linux-hosted Open Watcom tools, as the Win32 build
+# is built:
+#
+#     export WATCOM=/home/fosco/bin/WATCOM
+#     export PATH=$WATCOM/binl:$PATH
+#     export INCLUDE=$WATCOM/h
+#     wmake -f Makefile.dos
+#
+# Note INCLUDE has no $WATCOM/h/nt on it, unlike the Win32 build: that
+# directory is the Win32 API headers and nothing here wants them.
+
+# --- the extender ----------------------------------------------------------
+#
+# DOS/32A, bound into the executable, so what ships is one file that needs
+# nothing on the path.
+#
+# `system dos32a` does all of it. An earlier version of this file claimed
+# there was no such target and hand-rolled it as
+#
+#     wlink system dos4g option stub=dos32a.exe
+#
+# with an invented path to dos32a.exe, which was wrong twice over. wlink.lnk
+# in $WATCOM/binl has had the target all along:
+#
+#     system begin dos32a
+#         option osname='DOS/32 Advanced DOS Extender (LE-style)'
+#         libpath '%WATCOM%/lib386'
+#         libpath '%WATCOM%/lib386/dos'
+#         libpath '%WATCOM%/lib386/l32'
+#         op stub=dos32a.exe
+#         format os2 le
+#     end
+#
+# Note that its `op stub=dos32a.exe` carries no path, and on *this* host
+# that does not resolve. The Linux-hosted wlink lives in $WATCOM/binl,
+# while dos32a.exe is in $WATCOM/binw with the DOS- and Windows-hosted
+# binaries; on a DOS or Windows host the two share a directory and the bare
+# name finds it. Cross-building from Linux, it does not:
+#
+#     creating a DOS/32 Advanced DOS Extender (LE-style) executable
+#     Warning! W1093: cannot open dos32a.exe
+#
+# So the path is supplied on the command line, where it overrides the
+# system definition's default. Open Watcom does ship DOS/32A -- dos32a.exe
+# and sb.exe sit beside dos4gw.exe -- so there is still nothing to install.
+#
+# And the reason the recipe tests for the file first: **wlink does not fail
+# on a missing stub.** It prints that warning, links the default DOS/4GW
+# stub instead, and exits successfully, so a bad path yields a binary that
+# needs DOS4GW.EXE at run time from a build that looks like it worked.
+# Two different wrong paths got past this before the test was added.
+STOCK_STUB = $(%WATCOM)/binw/dos32a.exe
+
+# The bound extender is a copy of Open Watcom's with six bytes changed, so
+# that it looks for a DPMI host *before* a VCPI server. Stock DOS/32A takes
+# VCPI whenever it is offered, and a VCPI client is invisible to VSBHDA's
+# port trapping -- which is how you get "no Sound Blaster at 220" from a
+# machine that is displaying "SB emulation: Addr=220". tools/mkdpmifirst.py
+# has the whole story, including why the extender's own documented option
+# for this (/DPMITST, and the field in ss.exe) does nothing in 9.1.2.
+#
+# It is the default because it was measured to change nothing where there is
+# no DPMI host to find: full runs on the PIII under DOS 7.10 with
+# himem+emm386 reporting the full memory, on DOSBox-X, and on FreeDOS in
+# QEMU with a stock Jemm configuration at both 64MB and 256MB -- that last
+# one with working audio and no JEMMEX NOVCPI.
+#
+#     wmake -f Makefile.dos game STUB=$(STOCK_STUB)
+#
+# backs it out, and is the first thing to try if an extender-level problem
+# ever shows up on a machine this has not been run on.
+DPMI_STUB  = dos32adp.exe
+!ifndef STUB
+STUB       = $(DPMI_STUB)
+!endif
+#
+# `system dos32x` is the same thing in LX format and `system stub32a` uses
+# DOS/32A's smaller standard stub, which loads DOS32A.EXE from disk rather
+# than carrying it. Neither is wanted here: LE is the format DOS/4GW
+# compatibility is defined in, and the whole point is to carry the
+# extender.
+#
+# SB.EXE ("stub it") does the same binding after the link and is not used:
+# it is a DOS program, and this build runs on Linux.
+#
+# LSYSTEM, STUB, GAME_TARGET, GAME_MAP and MODES are each set only if they
+# are not set already, so a second extender is a short wrapper over this file
+# rather than a copy of it -- see Makefile.cw. The objects are deliberately
+# *not* parameterised: the compile is identical for any DOS extender (same
+# -bt=dos, same GCFLAGS), so both builds share the one set of .do files and
+# only the link differs. That is the opposite of the .o/.do split against the
+# Win32 build, where the compile genuinely differs and sharing would be a
+# wrong binary.
+!ifndef LSYSTEM
+LSYSTEM = dos32a
+!endif
+
+CC   = wcc386
+LINK = wlink
+
+# -bt=dos  target 32-bit DOS rather than NT
+# -6r      Pentium Pro scheduling, register calling convention
+# -fp5     Pentium FPU code; the target is a Pentium III
+# -otexan  full speed optimisation
+# -sg      grow the stack -- see the long note in the Win32 Makefile, which
+#          applies here too and possibly more: a DPMI host commits the stack
+#          lazily just as Windows 9x does, so a function whose frame exceeds
+#          a page without touching it in order faults. There are 21 such
+#          frames in the engine as of this writing; tools/stackprobe.py
+#          counts them and checks every one has its __GRO probe.
+# -zq      quiet
+# -w4 -e25 warnings on, stop after 25 errors
+# -d1      line-number debug info, harmless in the shipped binary
+#
+# Deliberately *not* -fpi87 here, unlike the Win32 build. That one drops the
+# emulator reference because Win32s guarantees an FPU; under bare DOS the
+# runtime's emulator fallback costs nothing if an FPU is present and is the
+# difference between running and not on a machine without one. The target is
+# a Pentium III, so this is insurance rather than a requirement -- but it is
+# free insurance, which the Win32 note explicitly says the other one is not.
+CFLAGS = -bt=dos -6r -fp5 -otexan -sg -zq -w4 -e25 -d1 -i=src
+
+MODES_OBJS = tools/modes$(DOSOBJ) src/vbe$(DOSOBJ) &
+             src/vbedos$(DOSOBJ) src/dosmem$(DOSOBJ)
+
+# Guarded like GAME_TARGET: a second extender's MODES.EXE is a different
+# binary and must not overwrite this one, since comparing the two is the
+# first thing you want when an extender misbehaves.
+!ifndef MODES
+MODES = modes.exe
+!endif
+
+# probe/memwalk.c: the DPMI host honesty check. It is a DOS program with the
+# same three engine modules MODES.EXE needs, so it belongs here rather than
+# in probe/Makefile, which is GNU make for the *host* probes and says so.
+#
+# Built by this file rather than by the hand-written wcc386/wlink pair that
+# used to sit in its header, because that pair named `system dos32a` and a
+# literal stub path: run it after switching extenders and you would measure
+# DOS/32A's memory manager while believing you were measuring CauseWay's,
+# which is precisely the question the probe exists to answer.
+#
+#     wmake -f Makefile.dos memwalk     memwalk.exe,   DOS/32A
+#     wmake -f Makefile.cw  memwalk     memwalkcw.exe, CauseWay
+#
+# Deliberately not in `all`: it is a diagnostic, not something the DOS build
+# needs, and it is wanted about once per memory manager.
+MEMWALK_OBJS = probe/memwalk$(DOSOBJ) src/vbe$(DOSOBJ) &
+               src/vbedos$(DOSOBJ) src/dosmem$(DOSOBJ)
+
+!ifndef MEMWALK
+MEMWALK = memwalk.exe
+!endif
+
+# --- mmxcheck --------------------------------------------------------------
+#
+#     wmake -f Makefile.dos mmxcheck    mmxchk.exe,   DOS/32A
+#     wmake -f Makefile.cw  mmxcheck    mmxchkcw.exe, CauseWay
+#
+# Does the hand-written MMX colour conversion agree with the C one?
+#
+# This is the only thing anywhere that can answer that. src/yuvmmx.c is
+# Watcom inline assembly, so the gcc harness suite cannot compile it, let
+# alone run it -- yuvtest says as much at the end of its output rather than
+# letting its green lines imply coverage it has not got. The *arithmetic* is
+# proved on the host, exhaustively (see src/yuvmmx.h); the transcription into
+# assembly can only be checked on a machine with MMX in it.
+#
+# Deliberately not in `all`, like memwalk: it is wanted once after a change to
+# the kernel, not on every build. But unlike memwalk it is wanted at least
+# once, because until it has been run the kernel is written-but-unproven.
+#
+# It links the conversion and the surfaces and nothing else -- no presenter,
+# no decoder, no VBE. The subject is one loop.
+# src/cpu$(DOSOBJ) because yuv.c's mr_yuv_have_simd() now asks the processor
+# as well as the build. That is also why the probe is worth more than it was:
+# it links the same predicate the engine uses, so if detection says no on this
+# machine the probe says "skipped" instead of "ok", which is a result and not
+# a silence.
+MMXCHECK_OBJS = probe/mmxcheck$(DOSOBJ) src/yuv$(DOSOBJ) &
+                src/yuvmmx$(DOSOBJ) src/gfx$(DOSOBJ) src/cpu$(DOSOBJ)
+
+!ifndef MMXCHECK
+MMXCHECK = mmxchk.exe
+!endif
+
+# --- blendcheck ------------------------------------------------------------
+#
+#     wmake -f Makefile.dos blendcheck  blendchk.exe,  DOS/32A
+#     wmake -f Makefile.cw  blendcheck  blndchkcw.exe, CauseWay
+#
+# Does the hand-written MMX alpha blend agree with the C one? Same
+# arrangement as mmxcheck above and for the same reason -- src/blendmmx.c is
+# Watcom inline assembly, so the gcc harness suite cannot compile it, let
+# alone run it. blendtest says as much at the end of its output rather than
+# letting its green lines imply coverage it has not got. The lane arithmetic
+# is proved on the host, exhaustively over all 16,777,216 (src, dst, alpha)
+# triples (see src/blendmmx.h); the transcription into assembly can only be
+# checked on a machine with MMX in it.
+#
+# Deliberately not in `all`: wanted once after a change to the kernel. But
+# wanted at least once, because until it has been run the kernel is
+# written-but-unproven.
+#
+# It links the surfaces and the kernel and nothing else -- no presenter, no
+# UI, no interpreter. The subject is one loop.
+BLENDCHECK_OBJS = probe/blendchk$(DOSOBJ) src/gfx$(DOSOBJ) &
+                  src/blendmmx$(DOSOBJ) src/cpu$(DOSOBJ)
+
+!ifndef BLENDCHECK
+BLENDCHECK = blendchk.exe
+!endif
+
+# --- cpucheck --------------------------------------------------------------
+#
+#     wmake -f Makefile.dos cpucheck    cpuchk.exe,   DOS/32A
+#     wmake -f Makefile.cw  cpucheck    cpuchkcw.exe, CauseWay
+#
+# One layer under the two above: the gate that decides whether either kernel
+# runs at all. src/cpu.c asks CPUID, following xvidcore's cpuid.asm, and both
+# mr_yuv_have_simd() and mr_blend_have_simd() now go through it -- so a
+# detector that answers wrongly turns off two proven kernels, or turns them on
+# where the opcodes do not exist.
+#
+# Its decode is proved on the host by cputest, over synthesised leaf values.
+# This is the half that needs a processor: that the values reaching the decode
+# came off CPUID correctly, and that MMX detected is MMX that works. See the
+# header of probe/cpuchk.c on why only one direction of that is checkable.
+#
+# **Two object files.** That is deliberate and is the reason cpu.c is its own
+# module rather than a function in gfx.c: the thing gating the fast paths
+# should be checkable without linking the compositor.
+CPUCHECK_OBJS = probe/cpuchk$(DOSOBJ) src/cpu$(DOSOBJ)
+
+!ifndef CPUCHECK
+CPUCHECK = cpuchk.exe
+!endif
+
+# memwalk.c alone is built unoptimised; MW_CFLAGS and its rule are down with
+# the mp3impl rule, because a target naming $(DOSOBJ) has to come after
+# DOSOBJ is defined.
+
+# The default target, and so the first rule in the file: both executables.
+# MODES.EXE is small, shares every object it uses with the game, and is the
+# first thing wanted on a machine where the game picked the wrong mode --
+# so there is no reason for `wmake -f Makefile.dos` on its own to build
+# only one of them.
+all: .SYMBOLIC game modes
+
+modes: .SYMBOLIC $(MODES)
+
+memwalk: .SYMBOLIC $(MEMWALK)
+
+mmxcheck: .SYMBOLIC $(MMXCHECK)
+
+blendcheck: .SYMBOLIC $(BLENDCHECK)
+
+cpucheck: .SYMBOLIC $(CPUCHECK)
+
+# --- the game --------------------------------------------------------------
+#
+#     wmake -f Makefile.dos game
+#
+# Objects end in .do, not .o, and that is the important detail in this whole
+# file. The Win32 build compiles the same sources to src/audio.o; if this one
+# did too, the two builds would overwrite each other's objects and -- far
+# worse -- each would then find the other's up to date and link it. A DOS
+# object in a Win32 exe does not fail to link in any obvious way. Separate
+# extensions mean both builds can live in the tree at once, which is what
+# actually happens here.
+#
+# The same reasoning covers zlib and libpng: their sources are compiled
+# directly into .do objects beside the .o ones the Win32 build makes, rather
+# than through their own makefiles, which have one fixed output name each and
+# would have the same collision one level down.
+DOSOBJ = .do
+
+ZLIB = libs/zlib-1.4
+PNG  = libs/libpng-1.6.59
+XVID = libs/xvidcore-1.3.7
+
+# xvidcore for DOS is a *library*, not a list of objects compiled in place
+# like zlib's and libpng's above. Its sources are spread over eight
+# subdirectories, which the `.c$(DOSOBJ)` extension rule and its path
+# specifier cannot reach, and Makefile.watcom in the xvid tree already has an
+# explicit rule for every one of them -- so this build calls that rather than
+# restating fifty rules in a second dialect.
+#
+# **Pure C, no MMX**, unlike the Win32 build's copy of the same library. The
+# assembly is nasm emitting win32 COFF with OpenWatcom cdecl naming and has
+# never been checked against a flat DOS target; the reasoning is written out
+# at the top of Makefile.watcom. The DOS port keeps most of the benefit --
+# xvidcore's C decoder is about twice pl_mpeg's speed on the same content,
+# see src/viddec.h -- and loses the MMX multiplier on top of it.
+#
+# In build/dos, beside the Win32 build's rather than inside it: the two used
+# to share build/win32 and therefore shared object names, and the DOS target
+# cleaned first so it would not archive -bt=nt objects. That clean destroyed
+# the Win32 library, and the Win32 engine then failed to link with undefined
+# references that looked like a code fault. Separate directories now, so
+# neither build can touch the other.
+# Which xvidcore to build and link. One macro, because the directory, the
+# library name and the wmake target all have to agree and having them written
+# out separately meant they could disagree -- which they promptly did: the
+# recipe below built `dossimd` while the path still said `dos`, so the library
+# was built correctly and then the guard looked for one that was never made.
+#
+#   dossimd   the same 58 SIMD objects the Win32 library has. The default,
+#             measured on the PIII at 8.47ms a frame against the pure C
+#             build's 12.32ms, with xvidcore reporting `simd=sse`.
+#   dos       pure C, no assembly. The fallback, and still useful: it is the
+#             one thing that separates "xvidcore's SIMD is wrong on this
+#             machine" from "the decoder is wrong", without a bisect.
+#
+# Switch with one word and nothing can fall out of step:
+#
+#     wmake -f Makefile.dos XVIDVARIANT=dos
+#
+# The default was `dos` until the SIMD build was shown to run. Worth noting
+# what made that safe rather than hopeful: xvidcore picks its kernels at run
+# time and falls back to C for whatever the machine lacks, and for SSE it does
+# not trust CPUID alone -- it executes a trial instruction under a SIGILL
+# handler first (xvid.c:152), because SSE also needs the OS to have set
+# CR4.OSFXSR. On this target that trial *passes*, so the answer is `sse` and
+# not the `mmxext` that was predicted here; DOS/32A evidently does set it.
+!ifndef XVIDVARIANT
+XVIDVARIANT = dossimd
+!endif
+
+XVIDLIB = $(XVID)/build/$(XVIDVARIANT)/xvidcore_$(XVIDVARIANT).lib
+
+# wmake has to be told the extension exists before a rule can name it. The
+# first line clears the default list, which is what makes the order below the
+# search order; .c has to be in it or nothing builds at all.
+.EXTENSIONS:
+.EXTENSIONS: .do .c
+
+# And it has to be told where the sources are, even though every target below
+# carries its own directory: without a path specifier naming the directory, a
+# target in it is "does not exist and cannot be made from existing files".
+# Tried and watched fail, which is the only way to find that out.
+#
+# Spelled literally rather than through $(DOSOBJ), because an extension rule
+# is parsed before macros of that kind are any use -- `.c$(DOSOBJ):` is not
+# recognised as a rule at all, and the build fails exactly as it does with no
+# rule present.
+.c: src;tools;probe;$(ZLIB);$(PNG)
+
+.c.do:
+	$(CC) $(GCFLAGS) -fo=$^@ $^*.c
+
+# -mf      flat memory model, as the Win32 build uses; DOS/32A is flat too
+# -i=      libpng includes zlib's headers, and src/png.c includes libpng's
+#
+# MR_TARGET_DOS is what switches vbedos.c, presdos.c, platdos.c, wavedos.c,
+# dosmem.c and vfs.c's loose-file enumeration to their DOS halves. Watcom's
+# own __DOS__ would do under -bt=dos; naming it ourselves means the same
+# sources can be built for DOS by another compiler without silently
+# compiling to stubs, which is the failure that looks like "the BIOS reports
+# no modes" rather than like a build problem.
+# -DMR_YUV_MMX: the hand-written MMX colour conversion in src/yuvmmx.c,
+# which is video playback's inner loop. The PIII baseline has MMX, so it is
+# on here and in the Win32 Makefile, and never defined for the gcc harness
+# build -- that one cannot compile Watcom inline assembly, and a kernel the
+# suite appears to cover but does not is worse than one it plainly does not.
+# mrpy.ini's `simd=0` turns it off at run time; probe/mmxcheck.c is what
+# checks it against the C path, on the machine.
+# -DMR_BLEND_MMX: the same arrangement for the MMX alpha blend in
+# src/blendmmx.c, the compositor's last compute-bound loop -- the textbox
+# panel's 148,000 partial-alpha pixels at 126.8 ns/px, 18.8ms on every frame
+# that is not a cached dialogue band. Same `simd` key, but read at startup in
+# main.c, because unlike the colour conversion this one runs from frame one.
+# src/blendmmx.h has the lane arithmetic; probe/blendchk.c is the half only
+# the machine can answer.
+GCFLAGS = $(CFLAGS) -mf -DMR_TARGET_DOS -DMR_YUV_MMX -DMR_BLEND_MMX -i=$(PNG) -i=$(ZLIB) &
+          -i=libs -i=$(XVID)/src
+
+!ifndef GAME_TARGET
+GAME_TARGET = mrpydos.exe
+!endif
+
+# Kept beside GAME_TARGET rather than written into the link rule, because a
+# second build out of the same objects is a one-line override and the map is
+# how a crash address becomes a function name. Overwriting mrpydos.map from
+# a differently-linked binary would silently answer the wrong question:
+#
+#     wmake -f Makefile.dos game LSYSTEM=dos4g &
+#           STUB=$(%WATCOM)/binw/wstub.exe &
+#           GAME_TARGET=miwa4g.exe GAME_MAP=miwa4g.map
+#
+# That one produces a DOS/4GW binary, which needs DOS4GW.EXE beside it or on
+# the PATH -- wstub.exe loads the extender from disk rather than carrying it,
+# unlike the bound dos32a.exe stub this file uses by default.
+#
+# Makefile.cw is that same override written down and kept, for CauseWay.
+!ifndef GAME_MAP
+GAME_MAP = mrpydos.map
+!endif
+
+# The same list the Win32 Makefile keeps, minus presw32.h and plus the DOS
+# ones. Two copies, which is a wart: they are the input to the invalidation
+# stamp below and nothing else, so the cost of them drifting apart is a
+# rebuild that is too coarse or not coarse enough, not a wrong binary.
+HDRS = src/audio.h src/config.h src/expr.h src/font.h src/history.h &
+       src/image.h src/interp.h src/lex.h src/list.h src/md5.h src/mr.h &
+       src/musicroom.h src/persist.h src/present.h src/pyfn.h src/rhythm.h &
+       src/save.h src/scale.h src/scene.h src/script.h src/serial.h &
+       src/slang.h &
+       src/slparse.h src/slrender.h src/stmtid.h src/style.h src/tl.h &
+       src/ui.h src/bandcache.h src/blendmmx.h src/cpu.h src/vfs.h &
+       src/datefmt.h &
+       src/plat.h src/input.h src/keys.h src/pack.h src/wave.h src/sbconv.h &
+       src/presdos.h src/cursor.h src/dosmem.h src/dosisr.h src/vbe.h &
+       src/viddec.h src/xviddec.h src/avi.h
+
+GAME_OBJS = src/main$(DOSOBJ) &
+            src/platdos$(DOSOBJ) &
+            src/presdos$(DOSOBJ) &
+            src/wavedos$(DOSOBJ) &
+            src/sbconv$(DOSOBJ) &
+            src/dosmem$(DOSOBJ) &
+            src/vbe$(DOSOBJ) &
+            src/vbedos$(DOSOBJ) &
+            src/cursordat$(DOSOBJ) &
+            src/input$(DOSOBJ) &
+            src/gfx$(DOSOBJ) &
+            src/scale$(DOSOBJ) &
+            src/pack$(DOSOBJ) &
+            src/png$(DOSOBJ) &
+            src/image$(DOSOBJ) &
+            src/lex$(DOSOBJ) &
+            src/parse$(DOSOBJ) &
+            src/expr$(DOSOBJ) &
+            src/scene$(DOSOBJ) &
+            src/interp$(DOSOBJ) &
+            src/audio$(DOSOBJ) &
+            src/font$(DOSOBJ) &
+            src/ui$(DOSOBJ) &
+            src/bandcache$(DOSOBJ) &
+            src/vfs$(DOSOBJ) &
+            src/mp3impl$(DOSOBJ) &
+            src/plmimpl$(DOSOBJ) &
+            src/avi$(DOSOBJ) &
+            src/xviddec$(DOSOBJ) &
+            src/viddec$(DOSOBJ) &
+            src/yuv$(DOSOBJ) &
+            src/yuvmmx$(DOSOBJ) &
+            src/blendmmx$(DOSOBJ) &
+            src/cpu$(DOSOBJ) &
+            src/movie$(DOSOBJ) &
+            src/slang$(DOSOBJ) &
+            src/slparse$(DOSOBJ) &
+            src/style$(DOSOBJ) &
+            src/slrender$(DOSOBJ) &
+            src/save$(DOSOBJ) &
+            src/history$(DOSOBJ) &
+            src/serial$(DOSOBJ) &
+            src/datefmt$(DOSOBJ) &
+            src/stmtid$(DOSOBJ) &
+            src/tl$(DOSOBJ) &
+            src/md5$(DOSOBJ) &
+            src/persist$(DOSOBJ) &
+            src/musicroom$(DOSOBJ) &
+            src/pyfn$(DOSOBJ) &
+            src/rhythm$(DOSOBJ) &
+            src/list$(DOSOBJ) &
+            src/config$(DOSOBJ) &
+            src/ansi$(DOSOBJ)
+
+ZLIB_OBJS = $(ZLIB)/adler32$(DOSOBJ)  $(ZLIB)/compress$(DOSOBJ) &
+            $(ZLIB)/crc32$(DOSOBJ)    $(ZLIB)/deflate$(DOSOBJ) &
+            $(ZLIB)/gzclose$(DOSOBJ)  $(ZLIB)/gzlib$(DOSOBJ) &
+            $(ZLIB)/gzread$(DOSOBJ)   $(ZLIB)/gzwrite$(DOSOBJ) &
+            $(ZLIB)/infback$(DOSOBJ)  $(ZLIB)/inffast$(DOSOBJ) &
+            $(ZLIB)/inflate$(DOSOBJ)  $(ZLIB)/inftrees$(DOSOBJ) &
+            $(ZLIB)/trees$(DOSOBJ)    $(ZLIB)/uncompr$(DOSOBJ) &
+            $(ZLIB)/zutil$(DOSOBJ)
+
+PNG_OBJS  = $(PNG)/png$(DOSOBJ)      $(PNG)/pngerror$(DOSOBJ) &
+            $(PNG)/pngget$(DOSOBJ)   $(PNG)/pngmem$(DOSOBJ) &
+            $(PNG)/pngpread$(DOSOBJ) $(PNG)/pngread$(DOSOBJ) &
+            $(PNG)/pngrio$(DOSOBJ)   $(PNG)/pngrtran$(DOSOBJ) &
+            $(PNG)/pngrutil$(DOSOBJ) $(PNG)/pngset$(DOSOBJ) &
+            $(PNG)/pngtrans$(DOSOBJ) $(PNG)/pngwio$(DOSOBJ) &
+            $(PNG)/pngwrite$(DOSOBJ) $(PNG)/pngwtran$(DOSOBJ) &
+            $(PNG)/pngwutil$(DOSOBJ)
+
+game: .SYMBOLIC $(GAME_TARGET)
+
+# libpng's pnglibconf.h has to say PNG_API_RULE 2 -- Watcom calling
+# conventions -- or a -6r engine will not link against it. The top-level
+# Makefile derives it from the shipped prebuilt with that one value patched;
+# the same rule is here so this target does not depend on the Win32 build
+# having been run first. Both write the same file from the same source, so
+# whichever runs first wins and the other does nothing.
+$(PNG)/pnglibconf.h: $(PNG)/scripts/pnglibconf.h.prebuilt
+	sed -e "s/PNG_API_RULE 0/PNG_API_RULE 2/" $(PNG)/scripts/pnglibconf.h.prebuilt > $^@
+	grep -q "PNG_API_RULE 2" $^@
+
+# minimp3 is C99 -- declarations after statements -- so its one translation
+# unit needs -za99. Everything else stays C89. -w1 because it is somebody
+# else's code and -w4 on it is noise.
+src/mp3impl$(DOSOBJ): src/mp3impl.c
+	$(CC) $(GCFLAGS) -za99 -w1 -fo=$^@ $^*.c
+
+# pl_mpeg, the MPEG-1 decoder, is C99 too and more so -- `//` comments
+# throughout, declarations inside `for`. Same treatment, same reason, and this
+# rule is why src/plmdec.h exists: movie.c is where every decision about
+# timing and frame dropping is made, so it has to be readable under the
+# engine's C89 rule, and it cannot be if it includes the vendor header. This
+# is the only translation unit that does.
+#
+# Like the memwalk rule below, this must sit *after* `DOSOBJ = .do`. A target
+# naming $(DOSOBJ) above that line expands to `src/plmimpl` with no extension,
+# the .c.do extension rule wins instead, and the object is quietly built
+# without -za99 -- which on this file is several hundred syntax errors, so it
+# would at least be loud. The same mistake on a file that merely wanted
+# different optimisation was silent; see memwalk.
+src/plmimpl$(DOSOBJ): src/plmimpl.c
+	$(CC) $(GCFLAGS) -za99 -w1 -fo=$^@ $^*.c
+
+# probe/memwalk.c alone is built *unoptimised*, which is not an oversight.
+#
+# It stamps pages, calls out to map the framebuffer, and reads them back, and
+# declares nothing volatile. Today -otexan cannot legally cache those reads
+# across an opaque call, so it would probably survive it -- "probably" being
+# the problem. probe/Makefile makes the same choice for sccheck and stmtdump
+# and gives the reason: a probe exists to catch a write that nothing should
+# have made, and an optimiser holding the watched value in a register is the
+# one thing that would make it lie. A probe you must reason about before
+# trusting is worth less than one built the dull way.
+#
+# It also keeps the result comparable with the measurement in NOTES
+# ("realloc to 1088KB lost 556819 of 557056 bytes"), which came from the
+# hand-written wcc386 line that used to live in memwalk.c's header -- and
+# that line carried no -otexan, no -fp5 and no -sg either. The three engine
+# modules linked beside it stay on GCFLAGS: they are shared with the game and
+# MODES.EXE, and the sensitive loops are not in them.
+#
+# This rule lives here, after DOSOBJ is defined, and that is load-bearing.
+# Put it up beside MEMWALK_OBJS and the target expands to `probe/memwalk`
+# with no extension, the .c.do extension rule wins instead, and the object is
+# quietly built with -otexan -- which this file already warns about for
+# `.c$(DOSOBJ):`. Caught by reading the dry run, not by reasoning: the
+# compile line said -otexan while the makefile said -od.
+MW_CFLAGS = -bt=dos -6r -od -zq -w4 -e25 -d1 -i=src -mf -DMR_TARGET_DOS
+
+probe/memwalk$(DOSOBJ): probe/memwalk.c
+	$(CC) $(MW_CFLAGS) -fo=$^@ $^*.c
+
+# The engine objects depend on every header, the same sledgehammer the Win32
+# Makefile uses and for the same reason written up there: mr_value carries
+# its string inline, so a constant in a header changes struct layouts, and a
+# build that relinks stale objects against fresh ones produces a binary that
+# runs until the first module boundary. Deleting them all is coarse and the
+# tree compiles in seconds.
+#
+# A separate stamp from the Win32 build's: the two have different object
+# lists, and sharing one would have each build delete the other's work.
+hdrstamp.dos: $(HDRS)
+	rm -f $(GAME_OBJS)
+	touch hdrstamp.dos
+
+# No `system dos32a` library list to prune, unlike the Win32 build's
+# mrpy.lnk: a DOS program imports nothing.
+#
+# `option stack` is the one thing here that is not obvious. DOS/32A's default
+# is 64KB and the engine needs more than that -- an expression frame carries
+# mr_value argv[8], which is 8.4KB, so nested evaluation descends in large
+# steps. 1MB to match what the Win32 link reserves, and under DOS/32A it is
+# committed rather than grown through a guard page, which is one less thing
+# that can go differently between the two builds.
+# $(STUB) is a prerequisite so that `game STUB=dos32adp.exe` generates the
+# patched extender rather than failing the check below.
+# The grep guards against an archive that exists and is empty, which satisfies
+# this target and then fails the engine link on an undefined xvid_global --
+# an error that reads as a code fault and is not one. Same idiom and same
+# reason as the Win32 Makefile's.
+$(XVIDLIB):
+	cd $(XVID)/build/win32 && wmake -h -f Makefile.watcom $(XVIDVARIANT)
+	grep -aq xvid_global $(XVIDLIB)
+
+$(GAME_TARGET): hdrstamp.dos $(PNG)/pnglibconf.h $(STUB) $(GAME_OBJS) &
+                $(ZLIB_OBJS) $(PNG_OBJS) $(XVIDLIB)
+	@test -f "$(STUB)" || ( echo "no '$(LSYSTEM)' stub at $(STUB)" ; exit 1 )
+	$(LINK) system $(LSYSTEM) option stub=$(STUB) name $(GAME_TARGET) &
+		option stack=1m, map=$(GAME_MAP), eliminate, quiet &
+		file {$(GAME_OBJS)} &
+		file {$(ZLIB_OBJS)} &
+		file {$(PNG_OBJS)} &
+		library $(XVIDLIB)
+	@echo
+	@echo "Built $(GAME_TARGET). It wants mrpy.pak beside it, or a game"
+	@echo "directory as its one argument. The pak is the same file the"
+	@echo "Win32 build uses; 'wmake data' over there is what makes it."
+
+# MODES.EXE's objects are built by the same `.c.do:` rule as everything else
+# -- `tools` is on the path specifier above for modes.c's sake.
+#
+# It was three explicit rules once, written that way because this makefile
+# could not be tested at the time and explicit rules avoid the parts of wmake
+# that have to be exactly right. They can go now that the game target has
+# made the extension rule work for seventy other files. The history is worth
+# one line: the first attempt here failed with "(tools/modes.o) does not
+# exist and cannot be made from existing files" because the path specifier
+# did not name tools/, which is the error wmake gives for a target whose
+# directory it was not told about.
+
+# The stub is checked before the link and not after, because wlink turns a
+# missing one into a warning plus a DOS/4GW binary rather than an error.
+#
+# One line, no backslash continuations: wmake's line-continuation character
+# is `&`, and a `\` ending a recipe line is not reliably handed to the
+# shell as one.
+$(MODES): $(STUB) $(MODES_OBJS)
+	@test -f "$(STUB)" || ( echo "no '$(LSYSTEM)' stub at $(STUB) -- Open Watcom ships them in binw beside dos4gw.exe (dos32a.exe, cwstub.exe), so check that WATCOM is set; the DOS/32A default is generated from $(STOCK_STUB) by tools/mkdpmifirst.py; or pass STUB=/path/to/stub.exe" ; exit 1 )
+	$(LINK) system $(LSYSTEM) option stub=$(STUB) name $(MODES) file {$(MODES_OBJS)}
+	@echo
+	@echo "Built $(MODES) for '$(LSYSTEM)' with $(STUB) bound in."
+	@echo "One file; nothing needed on the path at run time."
+
+# Same shape as $(MODES), same stub check, same reason for it. `option
+# stack=1m` is not here: memwalk's own frames are small and the thing it
+# measures is the heap.
+# No `option map=`: the obvious spelling gives memwalk.exe.map, a sixth
+# override would be needed to avoid it, and a probe that prints its own
+# diagnosis has never wanted a map.
+$(MMXCHECK): $(STUB) $(MMXCHECK_OBJS)
+	@test -f "$(STUB)" || ( echo "no '$(LSYSTEM)' stub at $(STUB)" ; exit 1 )
+	$(LINK) system $(LSYSTEM) option stub=$(STUB) name $(MMXCHECK) &
+		option eliminate, quiet &
+		file {$(MMXCHECK_OBJS)}
+
+$(CPUCHECK): $(STUB) $(CPUCHECK_OBJS)
+	@test -f "$(STUB)" || ( echo "no '$(LSYSTEM)' stub at $(STUB)" ; exit 1 )
+	$(LINK) system $(LSYSTEM) option stub=$(STUB) name $(CPUCHECK) &
+		option eliminate, quiet &
+		file {$(CPUCHECK_OBJS)}
+
+$(BLENDCHECK): $(STUB) $(BLENDCHECK_OBJS)
+	@test -f "$(STUB)" || ( echo "no '$(LSYSTEM)' stub at $(STUB)" ; exit 1 )
+	$(LINK) system $(LSYSTEM) option stub=$(STUB) name $(BLENDCHECK) &
+		option eliminate, quiet &
+		file {$(BLENDCHECK_OBJS)}
+
+$(MEMWALK): $(STUB) $(MEMWALK_OBJS)
+	@test -f "$(STUB)" || ( echo "no '$(LSYSTEM)' stub at $(STUB)" ; exit 1 )
+	$(LINK) system $(LSYSTEM) option stub=$(STUB) name $(MEMWALK) &
+		option eliminate, quiet &
+		file {$(MEMWALK_OBJS)}
+	@echo
+	@echo "Built $(MEMWALK) for '$(LSYSTEM)' with $(STUB) bound in."
+	@echo "Usage: $(MEMWALK) [megabytes] [file-to-read]   (default 96, the pak)"
+
+# --- just the DOS-only files -----------------------------------------------
+#
+#     wmake -f Makefile.dos check
+#
+# The six files that exist only for this target, compiled on their own.
+# `game` builds them too, along with seventy others, and links them; this is
+# for when the question is "does the DOS platform code still compile" and the
+# answer is wanted in two seconds rather than in a minute.
+#
+# They are the files where it matters most. The host's gcc can be pointed at
+# them -- run.sh does -- but only through a shim that defines __interrupt,
+# __loadds and __far away, so what it checks is spelling. Everything here
+# that is actually hard about them is invisible to it.
+CHECK_OBJS = src/presdos$(DOSOBJ) src/platdos$(DOSOBJ) &
+             src/wavedos$(DOSOBJ) src/sbconv$(DOSOBJ) &
+             src/dosmem$(DOSOBJ) src/cursordat$(DOSOBJ)
+
+check: .SYMBOLIC $(CHECK_OBJS)
+	@echo
+	@echo "Compiled the DOS platform files. Use 'game' to link them."
+
+
+# --- the mouse pointer -----------------------------------------------------
+#
+# DOS has no cursor to borrow, so the engine draws one, and the art for it is
+# a PNG baked into a C array at build time rather than pixels typed into a
+# source file. Point CURSOR_PNG at another file and rebuild -- a game with a
+# reason to have its own pointer changes this one line.
+#
+# HOTSPOT is where the pointer actually points, in pixels from the top left of
+# the image. 0,0 suits an arrow whose tip is its first pixel; a round one
+# wants its middle, and getting it wrong means clicks land a few pixels from
+# where they look, which is maddening and nearly invisible.
+#
+# The default art comes from tools/mkarrow.py, which writes tools/cursor.png
+# from an ASCII drawing. The PNG is in the repository, so a build does not
+# need Python unless the art changes; `wmake -f Makefile.dos arrow` regenerates
+# it.
+CURSOR_PNG = tools/cursor.png
+HOTSPOT    = 0 0
+PYTHON     = python3
+
+src/cursordat.c: $(CURSOR_PNG) tools/mkcursor.py
+	$(PYTHON) tools/mkcursor.py $(CURSOR_PNG) $^@ $(HOTSPOT)
+
+
+arrow: .SYMBOLIC
+	$(PYTHON) tools/mkarrow.py tools/cursor.png
+
+# The DPMI-first extender. Six bytes of Open Watcom's own dos32a.exe, so it
+# is generated rather than checked in, and the tool refuses to write
+# anything it is not certain about.
+$(DPMI_STUB): tools/mkdpmifirst.py $(STOCK_STUB)
+	$(PYTHON) tools/mkdpmifirst.py $(STOCK_STUB) $^@
+
+dpmistub: .SYMBOLIC $(DPMI_STUB)
+	@echo "Built $(DPMI_STUB). Use it with:"
+	@echo "    wmake -f Makefile.dos game STUB=$(DPMI_STUB)"
+
+# Everything this makefile can make, so that
+#
+#     wmake -f Makefile.dos clean ; wmake -f Makefile.dos game
+#
+# really does rebuild the game from source rather than relinking whatever
+# objects happened to survive. That includes the generated cursor table, the
+# header stamp -- without which the next build thinks the headers have not
+# changed since objects that no longer exist -- and the libraries' .do
+# objects, which are ours: the Win32 build's .o files next to them are not
+# touched, which is the whole point of the two extensions.
+clean: .SYMBOLIC
+	rm -f $(MODES_OBJS) $(CHECK_OBJS) $(MODES)
+	rm -f $(MEMWALK_OBJS) $(MEMWALK)
+	rm -f probe/mmxcheck$(DOSOBJ) $(MMXCHECK)
+	rm -f probe/blendchk$(DOSOBJ) $(BLENDCHECK)
+	rm -f probe/cpuchk$(DOSOBJ) $(CPUCHECK)
+	rm -f $(GAME_OBJS) $(ZLIB_OBJS) $(PNG_OBJS)
+	rm -f $(GAME_TARGET) $(GAME_MAP) src/cursordat.c hdrstamp.dos
+	rm -f $(DPMI_STUB)
+	rm -f *.err
+
+# --- the hang at exit ------------------------------------------------------
+#
+# A long note used to sit here describing MODES.EXE hanging after its last
+# printf as an open problem with a hypothesis. It is solved and the writeup
+# has moved to NOTES.md, "The hang at exit, and segment-versus-selector
+# again": vbedos.c was freeing DPMI 0100h's real-mode *segment* through
+# 0101h, which frees a *selector*, so it released a descriptor belonging to
+# something else and left the MCB chain to loop forever. Both calls are DPMI
+# by hand now, keeping both numbers in a named struct.
+#
+# The one line worth repeating here, because it is about to happen again: a
+# segment and a selector are both `unsigned short`, and interchanging them
+# compiles in silence. It has caused a GP fault one way round and this hang
+# the other, in the same file.
+
+dist: .SYMBOLIC $(GAME_TARGET)
+        mkdir -p dist
+        cp $(GAME_TARGET) dist/
+        upx --strip-relocs=0 dist/$(GAME_TARGET)

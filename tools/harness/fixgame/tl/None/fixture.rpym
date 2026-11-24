@@ -1,0 +1,150 @@
+# The fixture's catalogue for its *own* language.
+#
+# tl/None is Ren'Py's slot for strings in the language the game is written
+# in -- not another language. Ren'Py's own interface strings are keyed in
+# English because they come from renpy/common/*.rpy, so a game written in
+# anything else translates them here, and they apply whenever no language is
+# selected, which is the state every player starts in.
+#
+# The fixture is treated as a French-written game for this purpose, which is
+# deliberate: it mirrors Miwa, and more to the point it is the direction that
+# broke three harnesses. datetest and slotfittest assumed the month names
+# would be French with no language set; langtest's variables were called
+# `french` and `english`. All of that is true of a French-written game and
+# false of an English-written one, and the suite could not tell the
+# difference because the only game it ever ran on was the first kind. With
+# this file the fixture is the first kind and tl/english/ is the second, so
+# both directions are exercised without needing either game.
+#
+# Keep the entries. A missing one does not fail loudly -- it makes an
+# assertion quietly vacuous, which is how a frame sized wrong for a long
+# string passed a whole suite once.
+#
+# Accents are stripped so this file stays ASCII. Lengths are unchanged,
+# which matters for the confirm prompt below.
+
+translate None strings:
+
+    # The load-confirmation prompt, and its length is the point.
+    #
+    # confirmtest is a regression test for this exact string: at 128 bytes
+    # it is one byte over what a value used to carry, so the final "?" was
+    # dropped, and it wraps to two lines, which is what caught a frame
+    # sized by measuring the text across its newline. The assertions are
+    # about the byte count and the wrap, so a short translation here makes
+    # all of them vacuous. Keep it long and keep the newline.
+    #
+    # From Miwa's tl/None/common.rpym:510, accents stripped -- which cost
+    # five bytes, since each accent was two in UTF-8, and took the string
+    # under the 128 the test is about. Padded back over it: confirmtest
+    # asserts strlen >= MR_VSTR_V5, which is 128 (expr.h:40).
+    old "Loading will lose unsaved progress.\nAre you sure you want to do this?"
+    new "Le chargement entrainera la perte de toute votre progression depuis la derniere sauvegarde.\nEtes-vous sur de vouloir faire cela ?"
+
+    # The confirm screen's other prompts, so it does not come out half
+    # translated.
+    old "Are you sure you want to return to the main menu?\nThis will lose unsaved progress."
+    new "Voulez-vous vraiment revenir au menu principal ?\nToute progression non sauvegardee sera perdue."
+
+    old "Are you sure you want to quit?"
+    new "Voulez-vous vraiment quitter ?"
+
+    old "Are you sure you want to overwrite your save?"
+    new "Ecraser cette sauvegarde ?"
+
+    old "Quick save complete."
+    new "Sauvegarde rapide effectuee."
+
+    # A plain interface label, which is what a menu button is.
+    old "Back"
+    new "Retour"
+
+    # Ren'Py's weekday and month names. datefmt.c looks these up with the
+    # disambiguation tag attached and strips it before emitting; see
+    # datefmt.c:52, and the catname helper in datetest.
+    old "{#weekday}Monday"
+    new "{#weekday}Lundi"
+
+    old "{#weekday}Tuesday"
+    new "{#weekday}Mardi"
+
+    old "{#weekday}Wednesday"
+    new "{#weekday}Mercredi"
+
+    old "{#weekday}Thursday"
+    new "{#weekday}Jeudi"
+
+    old "{#weekday}Friday"
+    new "{#weekday}Vendredi"
+
+    old "{#weekday}Saturday"
+    new "{#weekday}Samedi"
+
+    old "{#weekday}Sunday"
+    new "{#weekday}Dimanche"
+
+    old "{#weekday_short}Mon"
+    new "{#weekday_short}Lun"
+
+    old "{#weekday_short}Tue"
+    new "{#weekday_short}Mar"
+
+    old "{#weekday_short}Wed"
+    new "{#weekday_short}Mer"
+
+    old "{#weekday_short}Thu"
+    new "{#weekday_short}Jeu"
+
+    old "{#weekday_short}Fri"
+    new "{#weekday_short}Ven"
+
+    old "{#weekday_short}Sat"
+    new "{#weekday_short}Sam"
+
+    old "{#weekday_short}Sun"
+    new "{#weekday_short}Dim"
+
+    old "{#month}January"
+    new "{#month}Janvier"
+
+    old "{#month}February"
+    new "{#month}Fevrier"
+
+    old "{#month}March"
+    new "{#month}Mars"
+
+    old "{#month}April"
+    new "{#month}Avril"
+
+    old "{#month}May"
+    new "{#month}Mai"
+
+    old "{#month}June"
+    new "{#month}Juin"
+
+    old "{#month}July"
+    new "{#month}Juillet"
+
+    old "{#month}August"
+    new "{#month}Aout"
+
+    old "{#month}September"
+    new "{#month}Septembre"
+
+    old "{#month}October"
+    new "{#month}Octobre"
+
+    old "{#month}November"
+    new "{#month}Novembre"
+
+    old "{#month}December"
+    new "{#month}Decembre"
+
+    old "{#month_short}Jan"
+    new "{#month_short}Jan"
+
+    old "{#month_short}Feb"
+    new "{#month_short}Fev"
+
+    old "{#month_short}Sep"
+    new "{#month_short}Sep"

@@ -1,0 +1,53 @@
+# A linker system definition for this program.
+#
+# OpenWatcom's own `system win32s` (in $WATCOM/binl/wlink.lnk) hands the
+# linker twenty default import libraries. Four of them -- dlcapi, vdmdbg,
+# winstrm and win32spl -- are not shipped in the OpenWatcom 2.0 tree, so every
+# link printed four W1008 warnings about files that nothing here references.
+#
+# This is the same system with only the libraries the program actually imports
+# (mrpy.map binds to KERNEL32, USER32, GDI32 and WINMM, and nothing else). An
+# import library contributes only the symbols that are referenced, so naming
+# fewer of them changes the output rather than merely quieting it: the exe
+# should come out identical.
+#
+# If a future call needs another DLL -- comdlg32 for a file dialog, say -- the
+# symbol comes back as an undefined-reference *error* rather than silently
+# resolving, and the library has to be added here. That is the cost of this
+# file, and the reason it is worth keeping short.
+
+system begin mrpy
+    option osname='Win32s (Windows 3.x)'
+    libpath '%WATCOM%/lib386'
+    libpath '%WATCOM%/lib386/nt'
+    library kernel32,user32,gdi32,winmm
+
+    # Stated rather than left to the default, because the stack matters more
+    # here than it looks: an expression frame carries `mr_value argv[8]`,
+    # which is 8.4KB now that MR_VSTR_MAX is 1024, so nested evaluation costs
+    # stack in large steps. 1MB reserved is what wlink defaults to; this only
+    # writes it down so that a later change to this file is a deliberate one.
+    #
+    # The commit stays at wlink's 64KB -- `commit stack=` is accepted here and
+    # silently ignored for `format windows nt`, verified by reading
+    # SizeOfStackCommit out of the built exe. Growth past 64KB therefore goes
+    # through the guard page, which Win32s does support but emulates less
+    # well than NT. If a deep expression ever faults on the target, that is
+    # the first thing to suspect, and the fix is to shrink argv rather than
+    # to reserve more.
+    option stack=1m
+
+    # `runtime windows` with no `=version` is what sets the PE subsystem
+    # version to 3.10 (and the OS version to 1.11). That is not cosmetic: it
+    # is why the exe loads on Windows NT 3.1, which refuses a subsystem
+    # version newer than its own. 3.10 is the oldest Win32 there is, so one
+    # binary covers NT 3.1, Win32s, 95/98 and NT 4 through 10.
+    #
+    # OpenWatcom's own `system nt` differs from `system win32s` in exactly
+    # this -- it says `runtime console=4.0` -- and both carry the `^`, so the
+    # caret is not the part that matters. Writing `runtime windows=4.0` here
+    # would drop NT 3.1 silently and nothing else in the build would say so.
+    # See "The subsystem version is 3.10" in NOTES.
+    format windows nt ^
+    runtime windows
+end

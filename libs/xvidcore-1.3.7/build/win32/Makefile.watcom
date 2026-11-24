@@ -1,0 +1,737 @@
+# Makefile.watcom
+# Build xvidcore-1.3.7 as a 32-bit static library (decode-only)
+# using OpenWatcom C/C++ for the Win32s helper DLL (xvid32.dll).
+#
+# Building on Linux with OpenWatcom cross-compiler.
+#
+# Usage:
+#   wmake -f Makefile.watcom          win32/xvidcore.lib          SIMD, in use
+#   wmake -f Makefile.watcom dos      dos/xvidcore_dos.lib        pure C, in use
+#   wmake -f Makefile.watcom dossimd  dossimd/xvidcore_dossimd.lib SIMD, untried
+#   wmake -f Makefile.watcom clean    remove this directory's artefacts
+#
+# The SIMD builds carry the same 58 objects: mmx, xmm (MMXEXT), sse, sse2,
+# 3dnow, cpuid. xvidcore picks among them at run time and uses its C kernels
+# for whatever the machine lacks, so there is nothing to gain by subsetting
+# them per target.
+#
+# Each builds in its own directory and cannot disturb the others.
+#
+# Output: xvidcore.lib  (static lib, link into xvid32.dll or into mrpy.exe)
+#
+# --- the DOS variant, and why it has no assembly --------------------------
+#
+# The engine has two Watcom targets, mrpy.exe and mrpydos.exe, and both want
+# this decoder. The assembly can only go into one of them.
+#
+# nasm is invoked below with `-f win32`, which is COFF, and nasm.inc is given
+# -DWINDOWS so symbols come out underscore-prefixed to match OpenWatcom's
+# cdecl. The DOS build is `-bt=dos` and its objects are OMF; wlink will read
+# both formats in one link, but the segment naming and the memory model
+# assumptions behind these particular .asm files were never checked against a
+# DOS/4GW-style flat target, and `Wine cannot validate Win32s` has an exact
+# analogue here -- nothing on a Linux host can run the result either way.
+#
+# So the DOS target gets the C fallbacks. That is a documented divergence and
+# not a silent one: xvidcore's C decoder is still roughly twice pl_mpeg's
+# speed on the same content (see src/viddec.h for the measurement), so the
+# DOS build gains most of the benefit and loses the MMX multiplier. If the
+# DOS port ever needs that multiplier back, the work is assembling these same
+# files to OMF and proving it on the machine -- which is what probe/mmxcheck.c
+# exists to do for our own kernel.
+#
+# ARCH_IS_GENERIC rather than ARCH_IS_IA32 is what selects those fallbacks:
+# portab.h keys the function pointer tables off it, and with IA32 defined
+# xvid.c takes the addresses of the asm symbols unconditionally and the link
+# fails on every one of them.
+
+# Overridable so one makefile builds both. `dos` below sets them.
+!ifndef SYS
+SYS = nt
+!endif
+!ifndef ARCHDEF
+ARCHDEF = ARCH_IS_IA32
+!endif
+
+# -DWIN32, and only for the Win32 target. portab.h:74 keys its threading
+# macros off it and includes windows.h to get them, which a -bt=dos build has
+# no header for. Nothing the decoder actually uses is behind it -- the
+# decode-only build is single-threaded and num_threads is 0 -- so leaving it
+# undefined for DOS costs nothing and leaving it *defined* costs the build.
+!ifndef OSDEF
+OSDEF = -DWIN32
+!endif
+
+# Extra include path, for the DOS variant's <pthread.h> shim. Empty otherwise.
+!ifndef EXTRAINC
+EXTRAINC =
+!endif
+
+# Where enc_stubs.c is. It is the one source not under $(SRC) -- it is ours,
+# not xvidcore's -- and it is named by a bare relative path, so the DOS build
+# running in ../dos cannot see it without this.
+!ifndef STUBDIR
+STUBDIR = .
+!endif
+!ifndef LIBNAME
+LIBNAME = xvidcore.lib
+!endif
+
+# **The two variants build in separate directories**, win32/ and dos/, and
+# that is not tidiness -- it is a bug fix. They were sharing this directory
+# and therefore sharing object file names, with the `dos` target running
+# `clean` first so it could not archive Win32 objects by mistake. The first
+# time anyone ran it, that clean deleted the prebuilt Win32 objects *and*
+# xvidcore.lib, the DOS build then failed on an unrelated error, and what was
+# left behind was a 1536-byte empty xvidcore.lib -- so the next Win32 engine
+# link failed with undefined references to xvid_global and xvid_decore and
+# looked like a code problem.
+#
+# The fix costs nothing because build/dos is exactly as deep as build/win32,
+# so $(SRC) = ../../src resolves identically from either. wmake is given this
+# makefile by path and run with build/dos as the working directory; every
+# -fo=$^@ then lands there and no rule needs changing.
+#
+# Nothing either variant does can now touch the other's output.
+#
+# Only the decoder-side translation units are compiled.
+# Encoder, rate-control, and 2-pass stat files are excluded.
+# x86 MMX/SSE asm is also excluded to keep the build pure C —
+# the C fallbacks are used instead (adequate for a Win32s helper).
+# -----------------------------------------------------------------------
+
+# ---- Paths ---------------------------------------------------------------
+
+# Two levels up from build/win32 is the src tree
+SRC = ../../src
+
+# ---- Compiler ------------------------------------------------------------
+
+CC     = wcc386
+AR     = wlib
+NASM   = nasm
+AFLAGS = -q -b -n    # wlib: quiet, create binary, new lib
+
+# ---- Compiler flags ------------------------------------------------------
+#
+#  -bt=nt        Win32 (flat) target
+#  -mf           flat memory model
+#  -fpi87        inline x87 FP instructions
+#  -fp5          optimise for Pentium FPU scheduling
+#  -ox           full optimisation (ob2 + oi + ol + om + op + or + os + ot)
+#  -s            no stack-overflow checks (smaller, faster)
+#  -w3           warning level 3
+#  -zq           quiet (no banner)
+#  -DWIN32       define WIN32 (xvidcore checks this)
+#  -DNDEBUG      disable assertions
+#  -DARCH_IS_IA32  enable x86 asm acceleration paths (MMX/MMXEXT)
+#
+# Include paths cover every sub-directory that has headers.
+
+CFLAGS = -bt=$(SYS) -mf -ecc -fpi87 -fp5 -ox -s -w3 -zq &
+         $(OSDEF) $(EXTRAINC) -DNDEBUG -D$(ARCHDEF) -DARCH_IS_32BIT &
+         -I$(SRC) &
+         -I$(SRC)/bitstream &
+         -I$(SRC)/dct &
+         -I$(SRC)/image &
+         -I$(SRC)/motion &
+         -I$(SRC)/prediction &
+         -I$(SRC)/quant &
+         -I$(SRC)/utils
+
+# ---- NASM flags ----------------------------------------------------------
+#
+#  -f win32      Win32 COFF object format (for wlink)
+#  -DWINDOWS     nasm.inc: use underscore-prefixed symbol names (_foo)
+#                matching OpenWatcom cdecl (-ecc) convention
+#  -I../../src/  resolve  %include "nasm.inc"  from the source root
+#
+#
+# `-f win32` and `-DWINDOWS` are both overridable, for the `dossimd` target.
+# Neither name means what it looks like for a 32-bit build: in nasm.inc the
+# only thing WINDOWS controls at 32 bits is `%define PREFIX`, which is the
+# *leading underscore* on symbol names (nasm.inc:161), and 32-bit x86 asm
+# passes its arguments on the stack whatever the OS is. There is no Win32 ABI
+# in these files -- the Win64 argument-register block above it is behind
+# BITS 64 and this build never reaches it. So a DOS build wants -DWINDOWS
+# just as much, because wcc386 -ecc also decorates with a leading underscore.
+!ifndef NASMFMT
+NASMFMT = win32
+!endif
+
+# Extra nasm defines. The DOS target sets -DFORMAT_OMF_FLAT, which makes
+# nasm.inc emit Watcom's own segments -- _TEXT and CONST, 32-bit, group FLAT
+# -- instead of `.text` and `.rodata`. Without it a dos32a link fails with
+# "size of segment text exceeds 64k", because wlink takes nasm's differently
+# named segment for a 16-bit one. The patch in nasm.inc explains it at
+# length; it is additive, so this being empty reproduces the original build
+# byte for byte.
+!ifndef NASMDEFS
+NASMDEFS =
+!endif
+
+NASMFLAGS = -f $(NASMFMT) -DWINDOWS $(NASMDEFS) -I../../src/
+
+# -----------------------------------------------------------------------
+# Source -> object mappings  (decode-only subset)
+# -----------------------------------------------------------------------
+
+# Top-level: global init and the decore() entry point
+OBJ_CORE = &
+    xvid.obj &
+    decoder.obj
+
+# Bitstream parsing
+OBJ_BS = &
+    bitstream.obj &
+    cbp.obj &
+    mbcoding.obj
+
+# DCT (both needed: idct for decode, fdct referenced by mbtransquant)
+OBJ_DCT = &
+    idct.obj &
+    fdct.obj
+
+# Motion compensation + estimation_common (defines roundtab_76/79 used by decoder)
+OBJ_MOTION = &
+    gmc.obj &
+    motion_comp.obj &
+    estimation_common.obj &
+    sad.obj
+
+# Image / colorspace / post-processing / font (image_printf)
+OBJ_IMAGE = &
+    colorspace.obj &
+    image.obj &
+    interpolate8x8.obj &
+    qpel.obj &
+    postprocessing.obj &
+    font.obj
+
+# Utilities
+OBJ_UTILS = &
+    mem_align.obj &
+    emms.obj &
+    mbtransquant.obj &
+    mem_transfer.obj
+
+# Intra-prediction
+OBJ_PRED = &
+    mbprediction.obj
+
+# Dequantisation (mpeg4 and h263 variants)
+OBJ_QUANT = &
+    quant_mpeg.obj &
+    quant_matrix.obj &
+    quant_h263.obj
+
+# Encoder stubs (decode-only build: enc_create/encode/destroy return error)
+OBJ_STUBS = &
+    enc_stubs.obj
+
+# x86 SIMD objects (NASM, Pentium III: MMX + MMXEXT)
+# Assembled with -f win32 -DWINDOWS so symbols get underscore prefix
+# matching OpenWatcom cdecl.
+OBJ_ASM_UTILS = &
+    cpuid.obj &
+    mem_transfer_mmx.obj &
+    interlacing_mmx.obj
+
+OBJ_ASM_DCT = &
+    idct_mmx.obj &
+    fdct_mmx_skal.obj
+
+OBJ_ASM_MOTION = &
+    sad_mmx.obj &
+    sad_xmm.obj
+
+OBJ_ASM_IMAGE = &
+    interpolate8x8_mmx.obj &
+    interpolate8x8_xmm.obj &
+    colorspace_rgb_mmx.obj &
+    colorspace_yuv_mmx.obj &
+    colorspace_yuyv_mmx.obj &
+    gmc_mmx.obj &
+    postprocessing_mmx.obj &
+    qpel_mmx.obj
+
+OBJ_ASM_BS = &
+    cbp_mmx.obj
+
+OBJ_ASM_QUANT = &
+    quantize_h263_mmx.obj &
+    quantize_mpeg_mmx.obj &
+    quantize_mpeg_xmm.obj &
+    quantize_h263_3dne.obj
+
+# Remaining asm files — 3DNow, 3DNow Extended, SSE2, SSE3, SSE41, deinterlace.
+# A PIII will never execute these paths (CPUID won't set those flags), but
+# xvid.c takes their addresses unconditionally so the linker must resolve them.
+OBJ_ASM_REST = &
+    interpolate8x8_3dn.obj &
+    interpolate8x8_3dne.obj &
+    mem_transfer_3dne.obj &
+    sad_3dn.obj &
+    sad_3dne.obj &
+    idct_3dne.obj &
+    sad_sse2.obj &
+    cbp_sse2.obj &
+    fdct_sse2_skal.obj &
+    idct_sse2_dmitry.obj &
+    postprocessing_sse2.obj &
+    deintl_sse.obj
+
+OBJ_ASM = &
+    $(OBJ_ASM_UTILS) &
+    $(OBJ_ASM_DCT) &
+    $(OBJ_ASM_MOTION) &
+    $(OBJ_ASM_IMAGE) &
+    $(OBJ_ASM_BS) &
+    $(OBJ_ASM_QUANT) &
+    $(OBJ_ASM_REST)
+
+# The portable half, which is every translation unit that is C. The DOS
+# target builds exactly this and nothing else; see the note at the top of the
+# file for why it gets no assembly.
+ALL_OBJ_C = &
+    $(OBJ_CORE) &
+    $(OBJ_BS) &
+    $(OBJ_DCT) &
+    $(OBJ_MOTION) &
+    $(OBJ_IMAGE) &
+    $(OBJ_UTILS) &
+    $(OBJ_PRED) &
+    $(OBJ_QUANT) &
+    $(OBJ_STUBS)
+
+ALL_OBJ = &
+    $(ALL_OBJ_C) &
+    $(OBJ_ASM)
+
+# -----------------------------------------------------------------------
+# Default target
+# -----------------------------------------------------------------------
+
+all: xvidcore.lib .SYMBOLIC
+
+# The DOS variant: pure C, no WIN32, generic architecture, built in ../dos.
+# Recursed into rather than written as a second set of rules so that there is
+# exactly one description of how each file is compiled -- and run from a
+# different directory so it cannot disturb the Win32 objects beside this file.
+# See the note on that above; it is there because it already went wrong once.
+#
+# -i=../../../xvidshim supplies a one-typedef <pthread.h>. portab.h's #else
+# branch includes it unconditionally and a -bt=dos Watcom has none, but the
+# only thing xvidcore needs from it in a decode-only build is the pthread_t
+# that two structs declare a field of: every actual pthread_create and
+# pthread_join is behind `#ifdef HAVE_PTHREAD`, which nothing defines here. A
+# three-line header beats patching vendor source, and the shim lives outside
+# this tree so a future xvidcore release cannot take it away -- the same
+# reason libs/Makefile.libpng is not kept inside libpng's.
+dos: .SYMBOLIC
+	mkdir -p ../dos
+	cd ../dos && wmake -h -f ../win32/Makefile.watcom xvidcore_dos.lib &
+	    SYS=dos ARCHDEF=ARCH_IS_GENERIC OSDEF=-DMR_XVID_DOS &
+	    EXTRAINC=-i=../../../xvidshim STUBDIR=../win32
+
+# The DOS variant *with* the assembly, in ../dossimd.
+#
+# "simd" and not "mmx": this is the **same 58-object list the Win32 library
+# uses**, byte-for-byte the same set -- mmx, xmm (MMXEXT), sse, sse2, 3dnow
+# and cpuid. Nothing is held back, and there would be no reason to hold
+# anything back, because xvidcore chooses at run time and falls back to its C
+# kernels for whatever the machine does not have.
+#
+# That fallback is worth being precise about, because it is what makes
+# shipping the SSE objects on a DOS target safe rather than reckless.
+# xvid.c:152 does not trust CPUID alone:
+#
+#     cpu_flags |= check_cpu_features();                     /* CPUID */
+#     if ((cpu_flags & XVID_CPU_SSE) && sigill_check(sse_os_trigger))
+#         cpu_flags &= ~XVID_CPU_SSE;
+#     if ((cpu_flags & (SSE2|SSE3|SSE41)) && sigill_check(sse2_os_trigger))
+#         cpu_flags &= ~(SSE2|SSE3|SSE41);
+#
+# CPUID reports what the *chip* has; SSE additionally needs the *operating
+# system* to have set CR4.OSFXSR, and nothing under plain DOS does. So CPUID
+# would say yes and the instruction would fault -- which is exactly what those
+# two sigill trials exist to catch. They execute a trial instruction under a
+# SIGILL handler and drop the flag if it traps. A PIII under CauseWay should
+# therefore come out at mmxext, with the SSE paths declined by the library
+# itself rather than by this makefile.
+#
+# MMX and MMXEXT are *not* sigill-trialled, only CPUID-tested. For MMX that is
+# certainly right: it aliases the x87 register file, so there is no new
+# processor state and no OS involvement at all. For MMXEXT -- the integer SSE
+# instructions that operate on MMX registers, which is what the `_xmm` objects
+# are -- whether CR4.OSFXSR is required is something worth confirming on the
+# machine rather than reasoning about from here. The `simd=` field in the
+# movie log line says which class was chosen, so the answer is one run away.
+#
+# SIMD on DOS is not the problem the `dos` target's existence might suggest,
+# and saying otherwise was a mistake worth correcting here. MMX aliases the
+# x87 register file, so it adds no processor state for an OS to save or
+# restore -- unlike SSE, which needs CR4.OSFXSR set by somebody -- and in
+# protected mode under CauseWay a Pentium III executes it exactly as it does
+# under Win32s. **The engine already relies on this**: src/yuvmmx.c is built
+# with -DMR_YUV_MMX for both targets and probe/mmxcheck.c passed under DOS.
+#
+# What actually stood in the way was the **segment names**, and it took a real
+# link to find: `_TEXT`/`CONST`, 32-bit, group FLAT is what OpenWatcom emits,
+# and nasm.inc emits `.text`/`.rodata`. A `format windows nt` link does not
+# care, being flat; a dos32a LE link takes nasm's differently named segment
+# for a 16-bit one and dies with
+#
+#     Error! E2021: size of segment text exceeds 64k by 55401 bytes
+#
+# -DFORMAT_OMF_FLAT makes nasm.inc name Watcom's segments instead; the patch
+# there explains it, and is additive, so the Win32 objects are unchanged.
+#
+# Worth recording how this was nearly missed. Checking that the library
+# *resolves* `_idct_mmx` passes in both formats and proves nothing about
+# segment attributes -- the symbol was always findable, and the link failed
+# anyway with a byte count identical under `-f obj` and `-f win32`, which is
+# how we know the object format was never the issue. **Only a full link finds
+# this**, so the test for it is a full link: build the engine's own DOS image.
+# ARCH_IS_IA32 is what makes xvid.c dispatch to the kernels once they fit.
+#
+# **This is the unverified one.** The `dos` target is what Makefile.dos uses,
+# and it is pure C and known to run (dosbox-x, 5.63ms a frame). This is here
+# so the question can be settled on the machine rather than argued from a
+# desk: point Makefile.dos's XVIDLIB at ../dossimd/xvidcore_dossimd.lib,
+# build, and read the `simd=` field in the movie line of log.txt.
+#
+# **The detection itself is the thing most likely to fail, not the kernels.**
+# With ARCH_IS_IA32 and a non-MSVC compiler, the sigill trials above run
+# through signal() and setjmp() (xvid.c:78), at init, before a single frame is
+# decoded. Two outcomes to tell apart:
+#
+#   signal() returns SIG_ERR    sigill_check returns -1, which is truthy, so
+#                               the flag is *dropped*. Fail-safe: the library
+#                               quietly declines SSE and says mmxext.
+#   handler never fires         the trial instruction faults and the extender
+#                               takes the process down at startup. Not
+#                               fail-safe, and the symptom is a cutscene that
+#                               kills the program rather than one that stutters.
+#
+# If it is the second, the way round it is to skip probing entirely:
+# xvid_gbl_init_t.cpu_flags takes XVID_CPU_FORCE|XVID_CPU_MMX|XVID_CPU_MMXEXT
+# and then nothing is executed speculatively. src/xviddec.c's global_init is
+# where that would go, beside the `simd` ini read it already honours.
+dossimd: .SYMBOLIC
+	mkdir -p ../dossimd
+	cd ../dossimd && wmake -h -f ../win32/Makefile.watcom xvidcore_dossimd.lib &
+	    SYS=dos ARCHDEF=ARCH_IS_IA32 OSDEF=-DMR_XVID_DOS &
+	    LIBNAME=xvidcore_dossimd.lib &
+	    NASMFMT=obj NASMDEFS=-DFORMAT_OMF_FLAT &
+	    EXTRAINC=-i=../../../xvidshim STUBDIR=../win32
+
+# Spelled out with `+` on every object, as the win32 rule above is: wlib
+# takes a bare name as a command and only a `+name` as "add this module", so
+# the macro cannot be reused here. The list is the win32 one minus the asm.
+xvidcore_dos.lib: $(ALL_OBJ_C)
+	@echo Linking static library xvidcore_dos.lib - pure C, no MMX ...
+	$(AR) $(AFLAGS) xvidcore_dos.lib &
+	    +xvid.obj &
+	    +decoder.obj &
+	    +bitstream.obj &
+	    +cbp.obj &
+	    +mbcoding.obj &
+	    +idct.obj &
+	    +fdct.obj &
+	    +gmc.obj &
+	    +motion_comp.obj &
+	    +estimation_common.obj &
+	    +sad.obj &
+	    +colorspace.obj &
+	    +image.obj &
+	    +interpolate8x8.obj &
+	    +qpel.obj &
+	    +postprocessing.obj &
+	    +font.obj &
+	    +mem_align.obj &
+	    +emms.obj &
+	    +mbtransquant.obj &
+	    +mem_transfer.obj &
+	    +mbprediction.obj &
+	    +quant_mpeg.obj &
+	    +quant_matrix.obj &
+	    +quant_h263.obj &
+	    +enc_stubs.obj
+	@echo Done: xvidcore_dos.lib
+
+$(LIBNAME): $(ALL_OBJ)
+	@echo Linking static library $(LIBNAME) ...
+	$(AR) $(AFLAGS) $(LIBNAME) &
+	    +xvid.obj &
+	    +decoder.obj &
+	    +bitstream.obj &
+	    +cbp.obj &
+	    +mbcoding.obj &
+	    +idct.obj &
+	    +fdct.obj &
+	    +gmc.obj &
+	    +motion_comp.obj &
+	    +estimation_common.obj &
+	    +sad.obj &
+	    +colorspace.obj &
+	    +image.obj &
+	    +interpolate8x8.obj &
+	    +qpel.obj &
+	    +postprocessing.obj &
+	    +font.obj &
+	    +mem_align.obj &
+	    +emms.obj &
+	    +mbtransquant.obj &
+	    +mem_transfer.obj &
+	    +mbprediction.obj &
+	    +quant_mpeg.obj &
+	    +quant_matrix.obj &
+	    +quant_h263.obj &
+	    +enc_stubs.obj &
+	    +cpuid.obj &
+	    +mem_transfer_mmx.obj &
+	    +interlacing_mmx.obj &
+	    +idct_mmx.obj &
+	    +fdct_mmx_skal.obj &
+	    +sad_mmx.obj &
+	    +sad_xmm.obj &
+	    +interpolate8x8_mmx.obj &
+	    +interpolate8x8_xmm.obj &
+	    +colorspace_rgb_mmx.obj &
+	    +colorspace_yuv_mmx.obj &
+	    +colorspace_yuyv_mmx.obj &
+	    +gmc_mmx.obj &
+	    +postprocessing_mmx.obj &
+	    +qpel_mmx.obj &
+	    +cbp_mmx.obj &
+	    +quantize_h263_mmx.obj &
+	    +quantize_mpeg_mmx.obj &
+	    +quantize_mpeg_xmm.obj &
+	    +quantize_h263_3dne.obj &
+	    +interpolate8x8_3dn.obj &
+	    +interpolate8x8_3dne.obj &
+	    +mem_transfer_3dne.obj &
+	    +sad_3dn.obj &
+	    +sad_3dne.obj &
+	    +idct_3dne.obj &
+	    +sad_sse2.obj &
+	    +cbp_sse2.obj &
+	    +fdct_sse2_skal.obj &
+	    +idct_sse2_dmitry.obj &
+	    +postprocessing_sse2.obj &
+	    +deintl_sse.obj
+	@echo Done: $(LIBNAME)
+
+# -----------------------------------------------------------------------
+# Explicit rules for each source file
+# (wmake inference rules search one directory; explicit paths needed
+#  because sources live in sub-directories of ../../src/)
+# -----------------------------------------------------------------------
+
+# --- Core ---
+xvid.obj: $(SRC)/xvid.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/xvid.c -fo=$^@
+
+decoder.obj: $(SRC)/decoder.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/decoder.c -fo=$^@
+
+# --- Bitstream ---
+bitstream.obj: $(SRC)/bitstream/bitstream.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/bitstream/bitstream.c -fo=$^@
+
+cbp.obj: $(SRC)/bitstream/cbp.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/bitstream/cbp.c -fo=$^@
+
+mbcoding.obj: $(SRC)/bitstream/mbcoding.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/bitstream/mbcoding.c -fo=$^@
+
+# --- DCT ---
+idct.obj: $(SRC)/dct/idct.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/dct/idct.c -fo=$^@
+
+fdct.obj: $(SRC)/dct/fdct.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/dct/fdct.c -fo=$^@
+
+# --- Motion compensation ---
+gmc.obj: $(SRC)/motion/gmc.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/motion/gmc.c -fo=$^@
+
+motion_comp.obj: $(SRC)/motion/motion_comp.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/motion/motion_comp.c -fo=$^@
+
+# estimation_common.c defines roundtab_76 and roundtab_79 used by decoder
+estimation_common.obj: $(SRC)/motion/estimation_common.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/motion/estimation_common.c -fo=$^@
+
+sad.obj: $(SRC)/motion/sad.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/motion/sad.c -fo=$^@
+
+# --- Image / colorspace ---
+colorspace.obj: $(SRC)/image/colorspace.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/image/colorspace.c -fo=$^@
+
+image.obj: $(SRC)/image/image.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/image/image.c -fo=$^@
+
+interpolate8x8.obj: $(SRC)/image/interpolate8x8.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/image/interpolate8x8.c -fo=$^@
+
+qpel.obj: $(SRC)/image/qpel.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/image/qpel.c -fo=$^@
+
+postprocessing.obj: $(SRC)/image/postprocessing.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/image/postprocessing.c -fo=$^@
+
+# font.c provides image_printf (debug overlay, harmless to include)
+font.obj: $(SRC)/image/font.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/image/font.c -fo=$^@
+
+# --- Utils ---
+mem_align.obj: $(SRC)/utils/mem_align.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/utils/mem_align.c -fo=$^@
+
+emms.obj: $(SRC)/utils/emms.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/utils/emms.c -fo=$^@
+
+mbtransquant.obj: $(SRC)/utils/mbtransquant.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/utils/mbtransquant.c -fo=$^@
+
+mem_transfer.obj: $(SRC)/utils/mem_transfer.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/utils/mem_transfer.c -fo=$^@
+
+# --- Intra prediction ---
+mbprediction.obj: $(SRC)/prediction/mbprediction.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/prediction/mbprediction.c -fo=$^@
+
+# --- Quantisation tables ---
+quant_mpeg.obj: $(SRC)/quant/quant_mpeg.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/quant/quant_mpeg.c -fo=$^@
+
+quant_matrix.obj: $(SRC)/quant/quant_matrix.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/quant/quant_matrix.c -fo=$^@
+
+quant_h263.obj: $(SRC)/quant/quant_h263.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(SRC)/quant/quant_h263.c -fo=$^@
+
+# --- Encoder stubs (decode-only build) ---
+enc_stubs.obj: $(STUBDIR)/enc_stubs.c .AUTODEPEND
+	$(CC) $(CFLAGS) $(STUBDIR)/enc_stubs.c -fo=$^@
+
+# -----------------------------------------------------------------------
+# NASM rules — x86 SIMD (MMX + MMXEXT, Pentium III)
+# -----------------------------------------------------------------------
+
+# Utils
+cpuid.obj: $(SRC)/utils/x86_asm/cpuid.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/utils/x86_asm/cpuid.asm -o $^@
+
+mem_transfer_mmx.obj: $(SRC)/utils/x86_asm/mem_transfer_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/utils/x86_asm/mem_transfer_mmx.asm -o $^@
+
+interlacing_mmx.obj: $(SRC)/utils/x86_asm/interlacing_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/utils/x86_asm/interlacing_mmx.asm -o $^@
+
+# DCT
+idct_mmx.obj: $(SRC)/dct/x86_asm/idct_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/dct/x86_asm/idct_mmx.asm -o $^@
+
+fdct_mmx_skal.obj: $(SRC)/dct/x86_asm/fdct_mmx_skal.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/dct/x86_asm/fdct_mmx_skal.asm -o $^@
+
+# Motion / SAD
+sad_mmx.obj: $(SRC)/motion/x86_asm/sad_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/motion/x86_asm/sad_mmx.asm -o $^@
+
+sad_xmm.obj: $(SRC)/motion/x86_asm/sad_xmm.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/motion/x86_asm/sad_xmm.asm -o $^@
+
+# Image / interpolation / colorspace
+interpolate8x8_mmx.obj: $(SRC)/image/x86_asm/interpolate8x8_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/image/x86_asm/interpolate8x8_mmx.asm -o $^@
+
+interpolate8x8_xmm.obj: $(SRC)/image/x86_asm/interpolate8x8_xmm.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/image/x86_asm/interpolate8x8_xmm.asm -o $^@
+
+colorspace_rgb_mmx.obj: $(SRC)/image/x86_asm/colorspace_rgb_mmx.asm
+	$(NASM) $(NASMFLAGS) -I$(SRC)/image/x86_asm/ $(SRC)/image/x86_asm/colorspace_rgb_mmx.asm -o $^@
+
+colorspace_yuv_mmx.obj: $(SRC)/image/x86_asm/colorspace_yuv_mmx.asm
+	$(NASM) $(NASMFLAGS) -I$(SRC)/image/x86_asm/ $(SRC)/image/x86_asm/colorspace_yuv_mmx.asm -o $^@
+
+colorspace_yuyv_mmx.obj: $(SRC)/image/x86_asm/colorspace_yuyv_mmx.asm
+	$(NASM) $(NASMFLAGS) -I$(SRC)/image/x86_asm/ $(SRC)/image/x86_asm/colorspace_yuyv_mmx.asm -o $^@
+
+gmc_mmx.obj: $(SRC)/image/x86_asm/gmc_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/image/x86_asm/gmc_mmx.asm -o $^@
+
+postprocessing_mmx.obj: $(SRC)/image/x86_asm/postprocessing_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/image/x86_asm/postprocessing_mmx.asm -o $^@
+
+qpel_mmx.obj: $(SRC)/image/x86_asm/qpel_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/image/x86_asm/qpel_mmx.asm -o $^@
+
+# Bitstream
+cbp_mmx.obj: $(SRC)/bitstream/x86_asm/cbp_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/bitstream/x86_asm/cbp_mmx.asm -o $^@
+
+# Quantisation (dequant paths used by decoder)
+quantize_h263_mmx.obj: $(SRC)/quant/x86_asm/quantize_h263_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/quant/x86_asm/quantize_h263_mmx.asm -o $^@
+
+quantize_mpeg_mmx.obj: $(SRC)/quant/x86_asm/quantize_mpeg_mmx.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/quant/x86_asm/quantize_mpeg_mmx.asm -o $^@
+
+quantize_mpeg_xmm.obj: $(SRC)/quant/x86_asm/quantize_mpeg_xmm.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/quant/x86_asm/quantize_mpeg_xmm.asm -o $^@
+
+quantize_h263_3dne.obj: $(SRC)/quant/x86_asm/quantize_h263_3dne.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/quant/x86_asm/quantize_h263_3dne.asm -o $^@
+
+# Remaining — 3DNow / 3DNow Extended / SSE2 / SSE3 / deinterlace
+# (never executed on PIII, but required to satisfy link-time references)
+interpolate8x8_3dn.obj: $(SRC)/image/x86_asm/interpolate8x8_3dn.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/image/x86_asm/interpolate8x8_3dn.asm -o $^@
+
+interpolate8x8_3dne.obj: $(SRC)/image/x86_asm/interpolate8x8_3dne.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/image/x86_asm/interpolate8x8_3dne.asm -o $^@
+
+mem_transfer_3dne.obj: $(SRC)/utils/x86_asm/mem_transfer_3dne.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/utils/x86_asm/mem_transfer_3dne.asm -o $^@
+
+sad_3dn.obj: $(SRC)/motion/x86_asm/sad_3dn.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/motion/x86_asm/sad_3dn.asm -o $^@
+
+sad_3dne.obj: $(SRC)/motion/x86_asm/sad_3dne.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/motion/x86_asm/sad_3dne.asm -o $^@
+
+idct_3dne.obj: $(SRC)/dct/x86_asm/idct_3dne.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/dct/x86_asm/idct_3dne.asm -o $^@
+
+sad_sse2.obj: $(SRC)/motion/x86_asm/sad_sse2.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/motion/x86_asm/sad_sse2.asm -o $^@
+
+cbp_sse2.obj: $(SRC)/bitstream/x86_asm/cbp_sse2.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/bitstream/x86_asm/cbp_sse2.asm -o $^@
+
+fdct_sse2_skal.obj: $(SRC)/dct/x86_asm/fdct_sse2_skal.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/dct/x86_asm/fdct_sse2_skal.asm -o $^@
+
+idct_sse2_dmitry.obj: $(SRC)/dct/x86_asm/idct_sse2_dmitry.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/dct/x86_asm/idct_sse2_dmitry.asm -o $^@
+
+postprocessing_sse2.obj: $(SRC)/image/x86_asm/postprocessing_sse2.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/image/x86_asm/postprocessing_sse2.asm -o $^@
+
+deintl_sse.obj: $(SRC)/image/x86_asm/deintl_sse.asm
+	$(NASM) $(NASMFLAGS) $(SRC)/image/x86_asm/deintl_sse.asm -o $^@
+
+# -----------------------------------------------------------------------
+# Clean
+# -----------------------------------------------------------------------
+
+# The objects and both libraries. `dos` recurses through this, so it must not
+# remove anything that target then needs.
+clean: .SYMBOLIC
+	rm -f *.obj *.err xvidcore.lib xvidcore_dos.lib
+	@echo Cleaned.

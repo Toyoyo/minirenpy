@@ -1,0 +1,44 @@
+# The fixture audio matrix: what tools/mkfixaudio.py generates and what
+# durtest asserts about it. One file, read by both, so they cannot drift --
+# the same reason tools/enginesrc.lst exists.
+#
+# durtest used to name nine of the game's own tracks and their measured
+# durations. What it is actually testing is the duration arithmetic: a VBR
+# stream needs its Xing tag read (every VBR track in the old table was wrong
+# before that landed) and a CBR stream needs bytes divided by bitrate. The
+# matrix below is that question stated completely -- both bitrate modes, both
+# sample rates, all three channel modes -- rather than whatever combinations
+# a composer's export settings happened to produce.
+#
+# What is lost by generating these: the old table was output from several
+# encoders over several years, and this is one lame build. If a future bug
+# is some other encoder's idea of a Xing frame, this will not catch it and
+# the old table would not reliably have caught it either -- it would have
+# been luck. Stated so that nobody reads the matrix as broader than it is.
+#
+# The duration is what the generator is *asked* for, so it is a
+# specification and not a recording. MP3 frames quantise it: a frame is
+# 1152 samples, 26ms at 44.1kHz, so the real length lands within one frame
+# of the figure here. durtest's tolerance is 50ms, which covers that.
+#
+# Fields: name  rate  channels  mode  ms
+#   rate      44100 or 48000
+#   channels  1 or 2
+#   mode      cbr or vbr   (vbr carries a Xing tag; cbr does not)
+#   ms        requested duration
+
+# VBR, which is the case that needed the Xing tag.
+fix-vbr-44-stereo.mp3   44100  2  vbr   8000
+fix-vbr-48-stereo.mp3   48000  2  vbr  12000
+fix-vbr-44-mono.mp3     44100  1  vbr   3000
+fix-vbr-48-mono.mp3     48000  1  vbr    700
+
+# CBR, which was already right and has to stay right.
+fix-cbr-44-stereo.mp3   44100  2  cbr  20000
+fix-cbr-48-stereo.mp3   48000  2  cbr   5000
+fix-cbr-44-mono.mp3     44100  1  cbr   1200
+fix-cbr-48-mono.mp3     48000  1  cbr    400
+
+# A very short one. The old table's shortest was 392ms and it was the one
+# that caught a division that truncated to zero.
+fix-cbr-44-tiny.mp3     44100  2  cbr    150

@@ -1,0 +1,986 @@
+Throwaway harnesses that link the real engine sources and drive the actual
+entry points. They are kept because the behaviour they cover -- clicking a
+save slot, rolling back, opening and closing the game menu, switching the
+help screen's panels -- is not reachable from the Makefile's targets, and
+every bug found through them was in a path that read correctly.
+
+Build one against the whole engine (about 40s). Keep this list in step with
+the Makefile's OBJS; a stale one fails to link rather than misbehaving:
+
+  SRC=$(for f in save history serial stmtid expr interp scene vfs lex parse style \
+        slang slparse image png gfx audio font ui slrender mp3impl tl md5 \
+        persist musicroom pyfn rhythm list config; do \
+        echo -n "src/$f.c "; done)
+  gcc -O0 -g -I src -I tools/hostshim -I libs -o /tmp/rbtest \
+      tools/harness/rbtest.c tools/hostshim/plathost.c $SRC -lpng -lm
+  cd /tmp && /tmp/rbtest "$OLDPWD/tools/harness/fixgame"
+
+tools/hostshim/plathost.c is linked into every harness, which is why it is on
+that line and not in the source list. It is plat.h -- the seam between the
+engine and the machine, see src/plat.h -- for a machine with no window, no
+message queue and no display. All of it does nothing; what makes it
+unavoidable is image.c, which times its PNG decodes with mr_plat_ticks.
+
+A harness must not define an mr_plat_* function of its own: the link fails on
+the duplicate. One that wants to assert on a platform call -- "did the 'r' key
+ask to restore the window size?" -- should drop plathost.c from its own build
+line and supply the whole set.
+
+A pak is a game. mr_vfs_init mounts the archive and returns (vfs.c:186) --
+the loose directory is what it falls back to when there is no archive, not a
+second place to look -- so for anything given a pak, the directory argument
+decides nothing at all. run.sh takes the game from MR_PAK and from nowhere
+else:
+
+  tools/harness/run.sh                          # mrpy.pak
+  MR_PAK=$PWD/azami.pak tools/harness/run.sh    # another game
+  MR_PAK=/nope tools/harness/run.sh             # no game: five skip
+
+There was an MR_GAME as well, pointing at a game folder beside the repo, and
+all it could do was pair one game's script with another game's archive.
+playtest reported a pass for months that way.
+
+Arguments are not uniform, and getting them wrong looks exactly like a broken
+engine rather than a broken command line -- a whole suite run once came back
+with four "failures" that were only this. Most take a directory alone, mount
+no archive, and get a *fixture* directory:
+
+  /tmp/rbtest tools/harness/fixgame
+
+These take the pak first and the game directory second, because they need
+something only the archive has (translations, or the audio):
+
+  juketest langtest tltest audiostoptest rgtest playtest unlocktest
+  cuttest confirmtest slotfittest stacktest datetest durtest latencytest
+  seamtest oldsavetest standintest cutskiptest
+
+Most of them mean the *fixture* pak, not a game's. Only five still want a
+real game -- cuttest, langtest, slotfittest, stacktest and seamtest -- and
+any game's will do, verified against three of them; run.sh skips them when
+there is no pak rather than failing.
+
+(Those three were miwa.pak, azami.pak and an mrpy.pak that held Hinata, back
+when `wmake data` wrote mrpy.pak whichever game it packed. Each game's
+makefile now names its own -- mrpy.pak is Miwa, hinata.pak is Hinata -- so an
+mrpy.pak predating 2026-10-18 is whatever was built last.)
+Running the suite with no game installed and no pak
+built is a supported state, and is how the engine is meant to be published.
+
+What moved into the fixture to get there, and why each one could not simply
+be invented:
+
+  the jukebox and the high score table
+      common/screens.rpy builds both over the fixture's own generated
+      tones, named after their lengths, with the last two gated on
+      persistent.unlock_a and persistent.unlock_b. juketest and unlocktest
+      read them. The seven-plus-two shape is the thing unlocktest asserts.
+
+  fixgame/script_game.rpy
+      twenty say statements copied *verbatim* from Miwa, under their own
+      labels chap0 and chap6. They are hash preimages, not content:
+      oldsavetest's save fixtures name their resume point by statement id
+      and tltest matches translation ids, and both ids are md5s of the
+      reconstructed source line. Change a character -- an accent, a space,
+      the speaker tag -- and both tests go red. Nothing jumps to these
+      labels and nothing reads them as story.
+
+  fixgame/tl/english/script_game.rpy
+      the twenty `translate english chap6_83afebf2:` blocks Ren'Py
+      generated for those lines, also verbatim. This is the point of the
+      whole arrangement: the ids came from Ren'Py, so tltest checks our
+      parser against Ren'Py rather than against itself. A catalogue
+      generated from our own parser would agree with any drift in
+      mr_tl_identifier and assert nothing.
+
+run.sh in this directory is all of this in executable form -- it builds and
+runs the lot, or the ones you name, with the right arguments and source lists.
+Prefer it to retyping the commands below; the list of seven above was short by
+one for a while, and the harness it omitted looked like a failing test.
+
+These seven take a *fixture* directory instead of the game, and there are
+three of those -- tools/harness/story for the ones that walk a story,
+tools/harness/choice for the menu, and tools/harness/credits for a scrolling
+transform that is still running when a transition starts:
+
+  restarttest bandtest windowtest rbmusictest titlesavetest  <- story
+  branchtest afmtest                                         <- story
+  substtest prefixtest condtest movetest blurtest animtest   <- story
+  stalltest                                                  <- story
+  bartest skiptest savatltest savmenutest pausebacktest      <- story
+  inputtest                                                  <- story
+  choicetest                                                 <- choice
+  creditstest                                                <- credits
+
+None of the three needs the game any more. They used to symlink options.rpy,
+screens.rpy, gui.rpy, fonts/ and gui/ out of ../../../game, which made the
+suite depend on a directory that is not in this repository and cannot be
+published with it. Those five now live once in tools/harness/common/ and the
+fixtures link to them; `find tools/ -type l` should show nothing pointing
+outside the tree, and that is the invariant to keep.
+
+What is in common/, and what was deliberately left behind:
+
+  fonts/          the baked atlases, DejaVuSans + NotoSansJP
+  gui/            284KB, 41 files: the Ren'Py template's widget images --
+                  bar, button, scrollbar, slider, frame, namebox, notify,
+                  nvl, skip, textbox, game_menu, bubble, thoughtbubble
+  *.rpy           the template's three, as the game generated them
+
+Not copied: dosborder.png, overlay/main_menu.png, phone/, the window icons.
+That is 4.1MB of the game's own art, and no harness reads any of it.
+
+gui/ is needed, which is worth writing down because it is not obvious and
+cost a round of debugging to establish. Every story-based harness passes
+with gui/ deleted outright -- 26 tests, all green -- so it looks like dead
+weight. choicetest is the exception: gui.button_properties("choice_button")
+resolves to gui/button/choice_hover_background.png, and that image *is* the
+blue bar the hover assertions look for. Delete it and choicetest fails on
+"hovering paints a blue bar", which reads as a bug in whatever else changed
+most recently rather than as a missing file.
+
+The two binary fixtures are generated, with the generator committed beside
+the output so the repo needs no encoder to run the suite:
+
+  story/audio/one.mp3, two.mp3   tools/mkfixaudio.py
+  choice/images/room.png         tools/mkfixtureimg.py -m room
+
+Read mkfixaudio.py's docstring before shortening those tracks. They are 90
+seconds for a reason: script.rpy plays them with `loop`, chan_rewind zeroes
+out_frames on every loop (audio.c:526), and rbmusictest waits for the
+position to *reach* a target -- so a track that wraps mid-test sends the
+counter it is watching backwards, and the test does not fail cleanly.
+
+convtest takes nothing either, and goes further than the rest: it writes a
+one-entry MRPK archive and mounts that. A string catalogue is found by
+enumeration, and mr_vfs_enum only enumerates an archive on this host -- a
+loose tl/ directory in a fixture is invisible to a gcc build. Writing the
+archive is also what keeps it independent of which game is installed, which
+is the trap tltest documents.
+
+cputest takes nothing either and is the smallest of them: it links src/cpu.c
+alone and drives MR_CPU_DECODE with synthesised CPUID leaf values. Read its
+closing note before trusting it for more than that -- the assembly that feeds
+the decode on the target is not built here, and it deliberately does not
+assert that this host has MMX, because that assertion could not fail.
+probe/cpuchk.c is the half that runs on a processor.
+
+standintest and cuttest are the two halves of the cutscene, split by what
+each can be evidence about. cuttest takes a real game's pak and is about the
+*build convention*: `wmake data` turning a video into audio/<name>.mp3 and
+images/<name>.png, the script finding them by those names, and the wait
+lasting the track's length. It could not use a fixture, because a fixture
+cannot be evidence about a convention it was written to satisfy.
+
+standintest takes the fixture pak and is about what the engine does with
+those two assets once it has them: where the held frame lands on the stage,
+what is drawn over it, and what is on the stage after the cutscene ends. It could not use a game,
+and for the mirror-image reason -- the only cutscene either shipped game has
+is Miwa's intro.webm, whose poster is 1280x720, so the stage-sized case is
+the identity and both bugs it covers are invisible. Its fixture poster is
+640x320 on purpose, and the test asserts that before anything else, so
+regenerating it stage-sized fails loudly instead of going quiet.
+
+The duration is cuttest's and is deliberately not standintest's: the host
+waveOut shim consumes buffers the instant they are queued, so a stand-in
+timed off its soundtrack here would be timed off a lie. standintest's
+fixture label has no soundtrack and takes the fixed-length branch.
+
+cutskiptest is a third, and the split is the same kind: it is about *which
+exit* from the cutscene is taken, not about the picture or the duration. A
+cutscene's wait can end five ways, and skipping -- Ctrl held, Tab toggled --
+is the one that happens below both of mr_interp_update's teardown calls and
+above run_until_wait, so the statement after the cutscene used to run with the
+cutscene still up. Mid-story that is a frame of stale video; after a
+splashscreen the statement is `return`, the story ends in the main menu, and
+the teardown arriving a frame later restored the pre-cutscene scene over the
+menu and took the main_menu screen out of the scene with it. The engine stuck
+there with nothing on screen to click.
+
+So its fixture label (fixture_splash) is a cutscene followed immediately by a
+top-level `return` and nothing else, and the key assertions are about order
+within a single update: the poster is off the display list *and* the main menu
+is up after one frame, and the menu is still up ten frames later with Ctrl
+still held. "The cutscene ended" passes on the broken engine -- the skip did
+end it -- which is why that check is in the test but is not what it is for.
+standintest cannot see any of this: its label has a say after the cutscene, so
+a late teardown has a spare frame to arrive in and every claim it makes comes
+out green either way.
+
+placetest, wavtest, flagtest, enumtest, vbetest, packtest and scaletest take
+nothing: the
+first parses a throwaway script, wavtest and flagtest build the files they
+read, and the last two are pure arithmetic over buffers they make themselves.
+wavtest treats its first argument as the directory to write them in, so
+handing it the pak fails with "cannot write <pak>/good.wav" rather than
+anything about audio.
+
+texttest takes the game directory, like most of them, but it loads
+fonts/font*.dat and those are format v2 -- run `wmake fonts` before it, or it
+stops with a note saying so rather than failing a screenful of comparisons.
+
+These do not take the SRC list above, either because they stub out parts of
+the engine themselves (linking the real ones is a duplicate-symbol error) or
+because they need far less of it:
+
+  audiostoptest  src/audio.c src/vfs.c src/mp3impl.c
+  enumtest       src/vfs.c  (no arguments; it needs no game data)
+  scaletest      src/scale.c src/gfx.c  (no arguments)
+  vbetest        src/vbe.c src/vbedos.c (no arguments)
+  packtest       src/pack.c src/gfx.c   (no arguments)
+  wavtest        src/audio.c src/vfs.c src/mp3impl.c
+  durtest        src/audio.c src/vfs.c src/mp3impl.c
+  latencytest    src/audio.c src/vfs.c src/mp3impl.c  (+ -DHOSTSHIM_HOLD)
+  texttest       src/font.c src/vfs.c src/gfx.c
+  flagtest       expr list persist vfs pyfn md5 lex serial
+  convtest       expr list persist vfs pyfn md5 lex serial tl (no arguments)
+  tltest         parse lex expr vfs style slang slparse tl md5 pyfn list
+  placetest      expr scene vfs lex parse style slang slparse image png gfx
+                 mp3impl tl md5 persist pyfn serial list
+
+blurtest is the opposite case: it takes the whole SRC list *plus* one file,
+tools/harness/blurref.c, which is Ren'Py's blur serving as its oracle. That
+file is MIT-licensed Ren'Py code with attribution in its header, it is test
+scaffolding only, and nothing in src/ refers to it.
+
+placetest's list is spelled out rather than described as "everything except
+audio, ui, ..." because that description had drifted: it defines its own
+mr_audio_poll so audio.c has to go, and musicroom.c then cannot come (it
+calls mr_audio_current). rhythm.c is out for the same reason.
+
+Every harness that links audio.c also links tools/hostshim/wavehost.c, and
+run.sh adds it automatically when it sees audio.c in the source list. That
+file is wave.h -- the seam between the mixer and the sound card, see
+src/wave.h -- for a machine with no card: a device that consumes buffers
+instantly, or holds them under -DHOSTSHIM_HOLD. It replaced the fake
+mmsystem.h, which audio.c *included*; the two entry points below were
+statics in whatever translation unit included them, and are ordinary
+symbols now.
+
+A harness that walks a story walks **tools/harness/story**, not the game.
+
+That fixture is a short script -- a run of plain dialogue, a dissolve, a move,
+`window hide`/`window show`, two music tracks and a stop, a title card held by
+`$ renpy.pause()`, and a two-option menu -- laid out in the order the tests
+look for those things. It symlinks the real gui.rpy, screens.rpy and art, so
+the styles and the furniture are the real ones; only the story is fixed.
+
+This was learned the hard way. These tests used to assert against the game's
+own script.rpy, and the game is a work in progress: a chapter-select menu was
+added one afternoon and five harnesses failed at once with a dozen alarming
+messages, none of which meant anything. They were re-fitted, the script
+changed again an hour later, and they failed again. A unit test that depends
+on the current draft of the story is not testing the engine.
+
+Two things the fixture does on purpose and should keep doing:
+
+  - it declares its images with `image name = "..."` rather than relying on
+    them being found in images/, because mr_vfs_enum only walks loose files
+    on Windows and a host build discovers nothing by scanning;
+  - it ends with `jump start` rather than `return`, so a harness that steps
+    for a long time -- bandtest runs 1200 frames and then wants a line of
+    dialogue to measure -- cannot run out of story and sit on an empty stage.
+
+`answer_menu()` in those harnesses takes the first option of whatever menu is
+up. The fixture has one, and so does the game; a harness that does not answer
+it stops dead and every assertion about dialogue fails at once.
+
+unlocktest still runs against the real game, on purpose: what it tests is that
+game's persistent flags and the `build_rhythm_highscores()` in its screens.
+flagtest covers the same engine behaviour with no game data at all.
+
+A harness that renders anything must call mr_interp_start() before showing a
+screen, as main.c does: that is where `define gui.* = ...` runs and where the
+styles are finalised against those values. Skip it and the screens still lay
+out, but every gui.* is None -- borders and padding quietly vanish, and the
+layout dump looks plausible.
+
+The shim's waveOutGetPosition reports a position that trails the bytes
+written by HOSTSHIM_LAG_BYTES (a full NBUF-buffer queue -- keep it in step
+with audio.c), because a real card does and the difference is the whole point
+of mr_audio_output_position_ms. A shim that played instantly could not show
+the bug it exists to prevent. Set the define to 0 for a device with no
+latency.
+
+hostshim_wave_sink is a function *pointer*, not a function, and the harness
+defines it -- wavehost.c only declares it. Define it as
+`void (*hostshim_wave_sink)(const short *, int) = my_sink;`. Declaring it as
+a function links without complaint and crashes the moment audio is polled.
+
+Add -fsanitize=address,undefined when hunting a crash. Run from a scratch
+directory: they write and delete SAVE*.SAV and PERSIST.SAV there.
+
+  afmtest   auto-forward, i.e. the quick menu's "Auto" button, which did
+            nothing at all: the action stored the Preference's own name while
+            the wait read Ren'Py's field name, afm_enable. The check that the
+            button "reads back selected" is kept deliberately, next to the one
+            that passes only when the real field moved -- a button agreeing
+            with its own invented storage is what the bug looked like. Also
+            the after-click rule, and a negative control running the same ten
+            seconds of clock with Auto off. Then the two places where "does
+            Auto apply here?" is answered by whether Ren'Py has a SayBehavior
+            there: it walks the fixture to the menu on the clock alone, holds
+            the menu for twenty seconds to show nothing picks for the player
+            and that answering it does not switch Auto off, and crosses the
+            title card's untimed `renpy.pause()`. Then a case per row of the
+            table in NOTES, which is what the fixture's `afm_pauses` label is
+            for: a timed pause, a hard one and an untimed one in a row, told
+            apart by how long each lasts. Nothing else jumps to that label.
+            It ends with two untimed *hard* pauses, which nothing the player
+            presses can end -- so the cases there are clicking at one for
+            3.3s, a save/load round trip inside it, and its two real exits,
+            auto-forward and skipping. Two of them because each exit uses
+            one up.
+  substtest `[name]` substitution, in dialogue and in screen text, from the
+            fixture's `interp_say` label. The substituted line is that
+            label's *first* so the harness needs no navigation to reach it:
+            an earlier version walked to it and silently measured a leftover
+            line from `label start` instead. Also checks the typewriter
+            counts the drawn text rather than the source, which is the half
+            that fails invisibly.
+  convtest  the `!t` conversion in a substitution: `text "[title!t]"`
+            translates the *substituted value*, which nothing else can do.
+            Text is translated as a template, before interpolation, in Ren'Py
+            and here, so `text "[title]"` looks up the literal `[title]` and a
+            variable's contents are never a key -- which is why a chapter
+            title assigned under one language survives a switch, and why the
+            flag exists. Both are asserted, the second deliberately: the
+            un-flagged case is pinned as behaviour so the parity is written
+            down. Also pins the flags still unimplemented (r, s, i, q, u, l,
+            c), including that `t` applies inside a set such as `!tu` while
+            the `u` is dropped
+  prefixtest Python string prefixes -- u'', b'', r'', f'' and the pairs --
+            which another game's gui.rpy uses for every colour it defines.
+            Two halves: the literal parses with each prefix and r keeps its
+            backslashes, and a define that uses one reaches the colour the
+            *renderer* resolves for a hovered button. The second needs the
+            colour named, not merely present: unparsed, the style inherits
+            #66a3e0 from gui_button_text, so "is there a hover colour" and
+            "does hover differ from idle" pass either way. Also guards
+            against over-reading: `unlocked` and `rb` stay variables.
+            Calls mr_interp_start, not just mr_interp_init -- the style
+            expansion runs from start, and an empty style table answers every
+            lookup with the caller's default, which looks exactly like the
+            bug. It prints the "style: N styles" line for that reason.
+  condtest  everything about a `menu:` body that is not a plain choice.
+            Conditions (`"..." if expr:`), which are evaluated on arrival so
+            the same menu can offer different options twice; a menu with
+            every option conditioned away, which must be *skipped* rather
+            than shown empty and unanswerable; config.menu_include_disabled,
+            which keeps such an option on screen but unpickable; and both
+            caption forms, a say menuitem and a bare narrated string.
+            The fixture's conditional menu declares *three* options with the
+            middle one conditioned away, so a row index and a declared index
+            are different numbers and confusing them picks the wrong branch
+            rather than drawing the wrong count. Its captioned menu gives
+            each option several statements and a distinct line after the
+            menu, because an off-by-one target lands on a real line either
+            way and only naming the line tells them apart.
+            Both labels open with a line of dialogue before the menu: without
+            a checkpoint in front of it the menu is the oldest point and a
+            rollback there has nowhere to go, which is indistinguishable from
+            a rollback refusing to leave a menu.
+            The repaint block is the one to read before touching
+            mr_interp_redraw_kind. It asserts the engine *asks for frames*
+            while a caption types, which is what was broken; the reveal is
+            time-based, so the characters were always computed and an
+            assertion about the text appearing cannot catch it. Mutating the
+            fix back gives "1 of 16 frames asked for a repaint".
+            It also drives step() the way the real loop does, reporting
+            mr_interp_say_painted -- without that report the engine asks for
+            frames forever and the block proves nothing.
+            The press-to-skip block has the session's most instructive
+            negative control: letting the ST_MENU branch fall through to the
+            ordinary advance passed every check, because g_pc is still on the
+            menu statement and re-executing it makes the menu heal itself.
+            The checks that catch it are "nor restart the caption" and "nor
+            repeat it in the history" -- the two things a re-run really does.
+            Finally, the identifier block is the harness's only *external*
+            oracle. Every other translation check compares our parser with
+            our catalogue reader, so a digest that is wrong consistently
+            passes; these two constants (chap1_939df797 with nointeract,
+            chap1_851ede00 without) came out of a Ren'Py-generated
+            tl/french/script.rpy. The "fixture carries the right id" check
+            beside them stays green under the same mutation, which is the
+            whole argument for having the oracle.
+            It lives here and not in tltest on purpose -- see below.
+  movetest  the move family: MoveTransition written longhand (which is just
+            `move` with a non-default duration, and used to dissolve), the
+            four vertical kinds, and a panned `scene` background.
+            Read the fixture notes before adding to it. The pan phases exist
+            in two shapes because one of them cannot see the bug: `move_bg`
+            uses a 1280x720 backdrop, and for a backdrop no taller than the
+            stage every candidate placement gives the same answer.
+            `move_tallbg` uses tall.png -- 1280x1460 in two colour bands,
+            from tools/mkfixtureimg.py -- so one pixel says which part of the
+            backdrop is on screen. A *flat* tall image would be no good
+            either: it covers the whole stage at both ends of the pan. The
+            end position of that pan was wrong twice with everything else
+            green, and this is why.
+            Its step() composes the stage every frame, and into_transition()
+            exists because of two traps: one mr_interp_advance does not get
+            past a line of dialogue (it only completes the reveal), and
+            mr_scene_busy must be tested *before* each advance or the harness
+            skips the effect it is measuring. Both produced whole runs of
+            failures that were the harness's own.
+            There is deliberately no horizontal pixel trace: dark.png is not
+            flat, so "first pixel unlike x=0" reads a constant whatever the
+            engine does. That question was settled by logging render_move's
+            own numbers instead; see NOTES.
+  blurtest  im.Blur, and the only harness with a *verbatim Ren'Py* oracle:
+            blurref.c is blur_filters/blur32_core/linblur32_core copied out
+            of renpy-8.5.3-source/src/core.c, built alongside the engine, and
+            run over the same pixels. The comparison is byte for byte, not to
+            a tolerance. A reference written from the same paper would only
+            prove the same mistake twice -- an almost-Gaussian is three box
+            blurs whose widths come from a formula, and a wrong width or a
+            wrong pass split still looks blurred.
+            Its fixture is images/quad.png, four quadrants from
+            tools/mkfixtureimg.py -m quad, because blurring a flat image
+            returns the flat image: on room/street/dark/tall every check here
+            would pass with the blur ripped out. There is a check that says
+            exactly that, so the trap is recorded in the output.
+            The three `image quad ...` declarations cover the grammar one
+            radius at a time: one radius (circular), two radii (which a
+            broken parser silently collapses to one), and a nested im.Flip.
+            The flip one asserts that both manipulators ran, not their order
+            -- a mirror and an odd-width box blur commute exactly, so
+            swapping the two lines in image.c leaves this file green. That
+            was checked, not assumed.
+            It also prints the cost of a 1280x720 blur, which is not an
+            assertion but is the number to watch: a blurred background pays
+            it on every cache miss, on top of the PNG decode.
+  animtest  `image <name>:` animations -- the block form, where a name
+            resolves to a different frame as the clock moves. Three claims,
+            which fail differently: the parse (frame count, which pause
+            belongs to which frame, repeat, the per-frame transition), the
+            resolution (mr_image_get returns the frame the clock says,
+            wrapping or holding at the end), and the blend.
+            Fixtures are images/anim{0,1,2}.png, 64x64 RGBA from
+            tools/mkfixtureimg.py -m vband. Each is a left half and a right
+            half, and the split is load-bearing: the left halves are opaque
+            and differ in colour, so "which frame is showing" is one pixel
+            read, while the right halves differ in *alpha*, which is the only
+            way the premultiplied blend is observable. Two opaque frames mix
+            identically whether the alpha handling is right or not, so an
+            all-opaque fixture would pass with the premultiply ripped out.
+            That is the same unobservability trap as the backdrop pan and
+            then im.Blur, which is why mkfixtureimg.py grew alpha for this.
+            The frame durations are unequal (100/200/400ms) on purpose: with
+            equal ones, an implementation that divided elapsed time by the
+            frame count instead of walking the frames would land on the right
+            frame every time. There is a check asserting they are unequal.
+            The blend is compared against a floating-point reference written
+            from the definition, *not* transcribed from the integer code --
+            that is what caught a premultiply scaled wrong by a factor of
+            255, which still looks like a cross-fade. Exact values are also
+            pinned by hand so the tolerance-of-1 sweep is not carrying the
+            whole check, and there is a straight-mix reference alongside so a
+            pass cannot be a pass on pixels where right and wrong agree.
+            Nine deliberate breaks were tried against this file; eight went
+            red. The one that did not is mr_image_set_time in main.c's
+            frame(), which no harness links. See NOTES.
+  placetest where a `show ... at X:` block puts an image. The integer/float
+            rule, and -- since this is where the mouths bug lived -- the rule
+            that a placement which says anything at all gets *no* default, so
+            an axis it does not mention is zero rather than bottom-centre.
+            That had no coverage even though the script already contained a
+            y-only block; nothing looked at its x.
+  branchtest menus in the rollback log, in both directions: rolling back
+            stops *at* a menu and offers it again, one more press leaves it,
+            and rolling forward answers it with the option recorded there.
+            Also re-deciding a choice, and what that must do to the forward log.
+            The last block does the whole menu-rollback sequence again
+            *across a save*, because the live log and the one restored from a
+            slot are separate code: the checkpoint's kind was never written
+            to the file, so a loaded game thought every checkpoint was a say
+            and rolling back over a menu ate a line out of the history
+            screen. The in-memory block above had been green throughout. Its
+            menu must stay uncaptioned -- a captioned one writes a history
+            line and so pops correctly either way.
+            The fixture's menu converges -- both options jump to the same
+            label, one setting a flag -- which is the shape that defeats the
+            "did the statement change?" test rollforward uses. Takes the
+            branch that *writes* the flag first, on purpose: abandoning a
+            branch that wrote nothing has no delta to restore and would pass
+            whatever the logic did.
+  seamtest  features *in combination*, which is where this engine's bugs
+            have actually been. It tests nothing on its own: every block
+            crosses two or more things in the order a player would. Written
+            after three bugs in one week sat in seams between well-tested
+            parts -- the game menu reappearing on a rollback, but only after
+            a language switch; rollforward stopping after one step; the
+            rhythm quit button swallowed by the give-up dialog. The
+            invariant most blocks come back to is that an excursion into the
+            interface leaves no trace in the story.
+            Asks the scene for menus *by name*: the quick menu is a screen
+            too, so counting reads 1 with nothing open and 1 with the menu
+            up. Three negative controls are recorded in NOTES.
+  rbtest    rollback, history, and rollback after loading a save
+  menutest  opening and closing the game menu must not advance the story
+  wintest   rolling back from a title card, where `window hide` is in force
+  helptest  the help screen's Clavier/Souris tabs (screen variables), and
+            the `key "game_menu"` binding: Escape leaves a sub-menu opened
+            from the main menu, and in game the same key still closes the
+            menu onto the story instead. Both directions, because reading
+            the binding without honouring its `if main_menu` would send the
+            in-game right-click to the main menu. Note "Lecture is on
+            screen" does not distinguish them -- the navigation column is
+            drawn on the sub-screen too -- so the check is that Preferences
+            went away
+  savetest  the save file round trip
+  savatltest a save taken part way through a transform block, which used to
+            load frozen -- the credits roll stopped where the save was taken
+            and `fin` landed over a half-scrolled list. Takes the story
+            fixture, label save_atl. Four shapes: one long step, two steps
+            saved during the second (so the step index matters), `repeat`,
+            and a block that had already finished and must not come back as a
+            running one. Every assertion that counts is taken mid-flight: the
+            final positions are the same whether the block resumed or
+            restarted, so they pass against the bug. Last section covers the
+            other half: a rollback (and a rollforward) after a load, onto a
+            line an animation played over, which the rollback log used to
+            restore frozen at the start of the block
+  savmenutest a save taken at a choice menu, which used to come back with the
+            right thumbnail and no menu: the player had to click, press
+            space or roll the wheel before the options appeared. Takes the
+            story fixture, label save_menu, which holds three menus
+            differing only in what dialogue is up when they open -- none,
+            an undismissed line, and the menu's own caption. Only the
+            captioned one actually reproduced, which is the shape it was
+            reported in. Every assertion is made with no input at all after
+            the load, since an advance is exactly what used to fix it. Last
+            two sections are the second half of the bug: the re-executed
+            menu's checkpoint was appended past the one the file already
+            held, so the log had the menu twice and the first Page Up after
+            loading landed on the duplicate -- the same menu again. The
+            no-save baseline runs first, because the assertion is that the
+            two agree
+  pausebacktest rolling back *to* a chapter title card. The card is
+            `show screen title with fade` then `$ renpy.pause()`, and the
+            pause took no checkpoint, so the card was the one thing in a
+            script that rollback could not reach -- a step back from the line
+            after it went straight past to the line before. Takes the story
+            fixture, label pause_back, which puts a line and a variable on
+            either side of a card and then offers both spellings of an untimed
+            pause plus a timed one: Ren'Py checkpoints the untimed kind only
+            (statementexports.py:151-154), so `pause` and `$ renpy.pause()`
+            are stops and `pause 0.2` is not, and all three are asserted.
+            Three separate faults, each with its own section: the missing
+            checkpoint; the step back from the card itself, which landed on
+            the card's own point and re-ran the pause, so the first Page Up
+            appeared to do nothing (the menu bug's shape, in a pause); and the
+            checkpoint screen list, which was never written to a save file at
+            all -- so rolling back to a card in a loaded game drew its `scene
+            black` and nothing over it. The last is why the test rolls back to
+            a card twice, once live and once from a slot: the live log holds
+            the screens and only the trip through the file lost them.
+            Later sections cover a fourth fault found from a player's log.txt:
+            two rollbacks delivered inside one frame -- key auto-repeat -- ran
+            against a half-finished log, so the point stepped over was not
+            recognised and nothing was captured for the way forward. Rolling
+            back still worked; rolling forward moved the pc and left the
+            variables behind, which on a card is another chapter's title or
+            none. Pressed two and three times with no update between, both
+            directions, plus an advance and a rollback in one frame. The two
+            card titles are 3 and 40 characters so that lit pixels on the
+            stage distinguish the right title, the other one, and black
+  uitest    save thumbnail timing: the scene, not the menu
+  clicktest clicking a save slot through the real focus list
+  persisttest persistent data: survives a restart, a load and a rollback,
+            and is not carried by a save slot
+  confirmtest the confirm dialog: drawn over the screen that opened it,
+            modal, `action yes_action` runs what Confirm was handed, and the
+            nine-slice Frame background is really on the stage
+  restarttest main menu then Start again: no stale line over the opening
+            fade, no inherited rollback log, history or story variables
+  bandtest  partial frames: while a line types out only the dialogue box is
+            repainted, so every such frame is compared pixel for pixel
+            against what a full frame would have drawn, over 1200 frames of
+            real play. On a divergence it writes both stages to
+            /tmp/band_*.ppm and prints the run-up of frames
+  windowtest the dialogue window: `window show`/`window hide`, a line
+            showing it whatever they left behind, and -- the part that took
+            two wrong attempts -- an effect never touching it. Measures the
+            box against the scene rendered without it, which isolates the
+            window exactly, across a dissolve and across a move
+  bartest   a bar takes its style from its *value*, not from the keyword, so
+            `bar value Preference(...)` is a slider and gets xsize 350 while
+            the jukebox's AudioPositionValue stays a plain bar and fills its
+            viewport. Both halves matter: the obvious wrong fix is a default
+            width on bars, which passes the first and breaks the second.
+            Reads the styles out of the layout dump, and note the thickness
+            check only looks right by luck -- gui.bar_size and
+            gui.slider_size are both 25, so the width is the whole tell
+  creditstest a dissolve must start from what is on screen. Runs the credit
+            roll twice, once undisturbed and once with the game menu opened
+            and closed mid-scroll, and asserts the first frame of the
+            closing dissolve is *identical* to the frame before it. Exact,
+            not a tolerance: one of the three bugs it caught was worth only
+            6400 pixels (one frame of the roll's motion) and any sane
+            tolerance would have passed it. Needs its own fixture because
+            nothing else has a transform still running when a transition
+            starts
+  stalltest the screen must be right on every frame, *including* the ones
+            the loop skips. bandtest cannot see a wrongly-skipped frame: it
+            applies the same skip decision to its reference, so both go
+            stale together and agree. This keeps the stage as the engine
+            would have left it and compares against a full render taken
+            every frame. It caught the last glyph of a line going unpainted.
+            Two of its own traps are in its header comment -- invalidate
+            after advance, and never render the reference to mr_stage().
+            Seven walks, because the staleness depends where a frame falls
+            in a line: reverted, some cadences pass and others fail, so one
+            walk would be a coin flip. About 40s, the slowest harness --
+            it renders the stage twice per frame
+  quicktest the quick menu and the save/load page row: the overlay coming and going with the menus,
+            the script's `config.overlay_screens.append` actually running,
+            `$ quick_menu = False` emptying it, the greying of Retour and
+            Chargement R., QuickSave/QuickLoad/Notify, Skip() and
+            auto-forward. The load-bearing one is "a typing line still asks
+            for a partial frame": the menu is up for the whole game, and a
+            screen on the scene used to force a full 1280x720 recomposite
+            per character. Two traps in it -- the layout dump is only
+            written while the *live* list composites, so it is empty
+            mid-transition (settle() first), and the redraw kind must be
+            read on the frame *after* the say statement, since any frame
+            that executed something is full by definition
+  skiptest  skipping and the three "Avance rapide" preferences: Ctrl/Tab,
+            stopping at unread text, stopping at a menu, the seen set
+            round-tripping through PERSIST.SAV, and transitions suppressed
+            both by the preference and by skipping. Writes and removes
+            PERSIST.SAV, so run it from a scratch directory. Two traps
+            recorded in its comments: it must restart with `Start()` and not
+            mr_interp_start (the latter leaves the scene in place, so the
+            opening dissolve has nothing to do and the transition check
+            passes against a build that ignores the preference), and the
+            frame counts are 32 vs 1 rather than 32 vs 0 because Start()
+            itself costs a frame. The reset_persistent case drives both
+            progress=False and progress=True on purpose: asserting one
+            outcome cannot tell "honours the script" from "hardcoded", since
+            a hardcoded 1 passes the True case and a hardcoded 0 the False
+            one. It reads the flag out of the fixture's screens.rpy and
+            asserts agreement, so editing that script moves the expectation
+            rather than breaking the test
+  dismisstest `dismiss action X` on the high scores screen: a click on empty
+            space runs it, a click on Retour does *not* (dismiss must be the
+            lowest priority or it eats the navigation), and a screen without
+            one does not grow one. Also that screen's `key "K_SPACE"`, via
+            mr_interp_screen_key -- main.c's WM_KEYDOWN cannot be reached
+            from a harness, so only the lookup and the action are covered.
+            Note "Meilleurs scores" cannot tell the two screens apart: it is
+            the title of one and a tile label on the other
+  preftest  the preferences radio and check buttons showing which option is
+            chosen: Preference() and InvertSelected() answering selected, the
+            defaults, and the [prefix_] search that finds
+            radio_selected_foreground.png for selected_idle_. Note two
+            traps it exists to document: counting lit pixels cannot see this
+            (swapping the selection is pixel-count symmetric, so it hashes),
+            and every whole-stage check still passes with the foreground
+            draw removed, on the label colour alone -- which is why the
+            18px marker strip is checked on its own. Also that a preference
+            survives Start() -- and note it drives `Start()` through
+            mr_interp_action, because mr_interp_start only jumps and does
+            not reset to the baseline, so the first version of that case
+            passed against the bug
+  playtest  the preferences "Test" button, driven through the focus list so
+            the screen, config.sample_sound and the Play() action all have to
+            agree. Also the channel mapping and the loop defaults for
+            Play/Stop. The sound half is checked with no pump at all: the host
+            shim consumes every buffer instantly, so a short non-looping
+            effect is over within a few polls and the channel reads idle
+            again -- the music half survives its pump only because it loops.
+            Takes the pak and the game dir
+  juketest  the jukebox: MusicRoom built by real init-python code, clicking a
+            track, Next and Previous stepping the playlist, the playing track
+            drawn in the selected colour, the position bar advancing, and
+            `area` placing the three viewports. Also that an idle jukebox
+            asks for no frames and a moving bar asks for one. Takes the pak
+            and the game dir
+  rbmusictest rolling back must not restart the music: the mixer's position
+            has to keep going forward across a rollback, while a state with
+            different music still changes the track. The companion to
+            audiostoptest -- the two pin down opposite sides of if_changed and
+            a fix to either should be checked against both
+  titlesavetest saving on a chapter title card. Two faults stacked here and
+            the second was hidden by the first: the screen layer was cleared
+            wholesale on load, which dropped `show screen title` along with
+            the save menu; and the `$ renpy.pause()` holding the card was not
+            saved either, so once the card came back the restored state ran
+            straight on through `hide screen title` into the next scene. The
+            test waits several seconds after loading and looks again, which
+            is what separates the two
+  memreport NOT a test -- a heap report, and deliberately outside the default
+            run (it needs real saves in the working directory and always
+            exits 0). Intercepts every allocation with -Wl,--wrap and
+            attributes blocks to two stack frames, which is what separates
+            the session-long stage surfaces from cached images. Writes its
+            own saves now, on page 7, from two points 170 statements apart,
+            and deletes them -- it used to need SAVEP1S*.SAV copied into the
+            working directory and silently skipped the whole load half
+            without them. Also prints cache occupancy per step and the
+            freed/returned figures for an mr_image_flush, which is what says
+            whether flushing on load would save anything; see NOTES.md.
+            Takes an optional third argument: a statement budget, or `full`
+            to walk the whole script (about 90s on Miwa, versus 4s for the
+            400-statement default -- so the suite gets the short one). Only
+            the full walk saturates the image cache, and a short walk's
+            figures led to the opposite conclusion about flushing; quote the
+            full one.
+            Does not open the save or preferences screens, so the thumbnail,
+            style and layout cache figures are floors.
+  latencytest how long after being started a sound is actually audible. One
+            waveOut stream means the mixer queue is the latency, and at the
+            default depth that is the whole runway, over a second, against
+            a 300ms hit window. Built
+            with -DHOSTSHIM_HOLD so the shim's device keeps its buffers;
+            without that nothing is ever outstanding and this measures 0
+            whatever the engine does.
+  durtest   every MP3's reported length against ffmpeg's, 44.1k stereo and
+            48k joint stereo, CBR and VBR of each, plus a mono file. The
+            length used to come from the first frame's bitrate, which doubled
+            it for the nine VBR files -- and rhythm.c ends a run by it.
+            Figures in the table are ffprobe's, not the engine's.
+  audiostoptest `stop music fadeout` then `play music` of the same track,
+            which is what fast-skipping through a chapter break does. Takes
+            the pak and the game dir; links only audio.c and the VFS.
+            Also that if_changed does not reopen a track already playing --
+            asserted by position, since a reopen restarts the decode at
+            zero. Note the loop flag in that call is the one being
+            *requested*: pass 1 and the bug it guards against does not show,
+            because the old condition only fell through when 0 was asked for,
+            which is what a rollback asks after a checkpoint recorded a
+            channel mid-fadeout
+  placetest `yalign 1` vs `yalign 1.0`: integer positions are pixels. Parses
+            a throwaway script, so it needs no game directory
+  langtest  switching language changes the line on screen, the menus and the
+            saved state, and drops the rollback log
+  oldsavetest
+            version 5, 6 and 7 slots still load, against real files kept in
+            fixtures/. Takes the fixture pak, the fixture game dir, and the
+            three save fixtures. The saves stay real -- a synthesised old
+            save would only prove the reader agrees with the test's idea of
+            the old layout, which is the thing in doubt -- and the twenty
+            statements they name by id live in fixgame/script_game.rpy.
+            Before that this needed *Miwa's* pak, and against any other game
+            all three failed "it loads" while the variable section read
+            fine: the desynced-save guard working as intended, presenting as
+            a reader regression. It was chased as an intermittent for a
+            while, because the pak path is the same file whichever game is
+            built. The harness prints the engine's own log and a line saying
+            so when it happens.
+  tltest    every say statement finds its translation -- checks the identifier
+            digest against the real tl files (parser + catalogue only).
+            Runs on the fixture, whose twenty borrowed lines carry the ids
+            *Ren'Py* computed for them -- so the parser is checked against
+            Ren'Py and not against itself, which is the one thing a
+            generated catalogue could not do. The invented lines beside
+            them must all miss and fall through unchanged, which is the
+            other half.
+            It used to walk a real game and assert complete coverage of it,
+            which made it a content audit: red on one untranslated line and
+            red on a different game entirely. That belongs in the game's
+            own build.
+            Its coverage walk counts a captioned MENU statement as well as
+            MR_ST_SAY: a menu's caption is translatable dialogue but rides on
+            the MENU statement, so a say-only loop never looked at it -- which
+            is how a caption's identifier could be wrong unnoticed. The
+            fixture has no captioned menu, so that half is counted and not
+            yet exercised.
+  rgtest    the rhythm minigame: the beatmap's lanes and stride, PERFECT and
+            GREAT scoring against the real windows, the combo multiplier,
+            health and game over, the end-of-song summary and the high score.
+            Also the top-right quit button, which was missing: that it is up
+            only during the run proper, that hovering changes what is drawn,
+            and that a click inside opens the dialog while one two pixels
+            outside on any side does not. It reads the art's size from the
+            image and recomputes only the .rpy's placement rule -- the first
+            version hardcoded 48x48, the art is 56x56, and the only check
+            that noticed was the one probing just outside the edge.
+            Then the whole path through the interpreter -- `call screen
+            rhythm_game(...)` out of script_game.rpy changing the display over
+            and `num_hits, num_notes, rhythm_score = _return` unpacking to
+            three different numbers. Ends by evaluating the extras menu's
+            `build_rhythm_highscores()` -- a multi-line list literal, a
+            conditional `.append` and a comprehension -- which is the only
+            coverage the list support has.
+            Also the give-up dialog: that it is framed rather than bare text
+            (found by looking for the frame art's blue border along the
+            middle row), that Oui and Non are clickable where they are drawn
+            -- drawing and hit-testing now come from one layout, and a drift
+            between them is invisible until a click lands nowhere -- that it
+            appears during the countdown as well as during play, that it is
+            translated and the box is measured on the translation, and that
+            the music volume comes back afterwards whichever way the run
+            ends. That last one is the interesting assertion: it checks the
+            slider's value (0.6) rather than "not silent", because putting
+            1.0 back passes a silence test and still throws the setting away.
+            MR_DUMP=1 writes both frames to /tmp/rg_pause*.ppm to look at.
+            The first half hands the module an audio path that cannot be
+            opened, on purpose: no track starts, so the clock stays the one
+            the test is stepping and a 200ms scoring window can be asserted
+            on. One section does the opposite -- the real MP3 through the real
+            mixer -- and asserts the song clock never runs backwards, which
+            needs the shim's device-lag model below. Note the natural-end case runs at stride 200: at the real
+            stride, skipping to the end of the song misses 488 notes and ends
+            the run as a game over instead, which is correct but is a
+            different path
+  choicetest `menu:` -- the seven-option chapter select. Takes a fixture
+            directory, tools/harness/choice, which symlinks the real game's
+            gui.rpy, screens.rpy and art so the styles and the button images
+            are the real ones, and has a script.rpy of nothing but the menu.
+            Checks the options and their order, that each option's block runs
+            (`$ chap7=True` then `jump chap7`, in that order, then the `if`
+            after it), and the drawing: the buttons are gui.choice_button_width
+            wide and gui.choice_spacing apart and the block is centred where
+            choice_vbox says -- asserted against those variables rather than
+            against numbers, so it still means something for another game.
+            Hover and hit testing too, since both are this engine's own code.
+            MR_DUMP=1 writes /tmp/choice.ppm and /tmp/choice_hover.ppm.
+            Note the backdrop is black in those dumps on a host build:
+            mr_vfs_enum only walks loose files on Windows, so `scene` finds
+            no image. The menu itself is unaffected.
+  texttest  the {b}, {i} and {u} tags: that the four baked variants are four
+            different faces rather than aliases of the regular one, that the
+            tags are counted per flag so the closes may come out of order,
+            that a style survives a wrap, that a reveal of n characters draws
+            exactly what the text cut to n characters draws, and that CJK --
+            which has one weight -- falls back instead of vanishing.
+            Comparisons are pixel hashes, because a variant quietly falling
+            back to the regular glyph is the failure that would otherwise
+            look like working code. Note the obvious version of the reveal
+            test, comparing a pixel prefix against the settled line, is wrong:
+            an italic glyph leans out past its own advance
+  flagtest  one `persistent.<name>` is independent of every other: the
+            variable store, the persistent file round trip, `== True`, and
+            names that share a prefix. Needs no game data
+  unlocktest the same thing driven by the real script, and the case that
+            actually bit: clear the persistent data, start a new game, and
+            the unlocks must not come back out of the baseline. It only
+            reproduces on the run *after* a reset, so the test restarts the
+            interpreter in the middle -- a single-run version of it passes
+            against the bug
+  scaletest the four scalers in scale.c, which were split out of present.c
+            precisely so they could be reached: present.c is HDCs and DIBs
+            and is not in the source list above, so its one piece of pure
+            arithmetic had no coverage. Checks each against a double
+            reference written from the filter's definition, and every
+            one-row band against the full frame bit for bit -- the latter is
+            what catches a bilinear seam at a band edge, which bandtest
+            cannot see because it works at the stage level. Also pins that
+            bilinear=1 is bit-identical at 1:1 and 2:1, where it declines.
+            Four negative controls are recorded in NOTES.
+  packtest  pack.c: a 32bpp ARGB surface to whatever the display wants. The
+            other half of what was stuck inside present.c, and split out for
+            the DOS presenter, which needs 8, 16, 24 and 32bpp over a linear
+            framebuffer where the Win32 one needed only two. Checks each
+            depth against a reference written from the field positions
+            (rpos/rsize and the rest, straight out of the VBE ModeInfoBlock),
+            the specialised loops against the generic one -- reached by
+            describing a layout the fast paths refuse, as a card with blue at
+            the top of the word would -- every band against the whole frame,
+            and that nothing is written into the row padding, which is real
+            at both ends: a DIB row is DWORD aligned and a VBE scanline is
+            whatever the card says.
+            Also mr_pack_snap_rect, which grows a rectangle out to the 4x4
+            dither grid before it is packed on its own. That is what lets
+            the DOS presenter repaint the few hundred pixels under the
+            mouse pointer without leaving a square of wrong-phase dither
+            trailing behind it. The check that matters packs a snapped
+            sub-rectangle through a view into the same pixels and demands
+            the bytes match the whole frame -- with the unaligned case
+            asserted to *differ*, so the aligned one cannot pass
+            vacuously.
+            The band check is the one that matters: the 8bpp dither reads
+            the absolute row index, so renumbering rows inside a band shifts
+            the 4x4 phase and leaves a seam across the dialogue box while a
+            line types out. Negative controls in NOTES.
+            Two behaviours are pinned rather than endorsed. The fourth byte
+            of a 32bpp pixel is whatever the surface held, because the fast
+            path is a memcpy and nothing reads that byte. And pure white at
+            8bpp dithers between the top two grey entries instead of being
+            one index -- an ordered dither that offsets before quantising
+            cannot reach the top step in every phase. Both are worth another
+            look when there is a real 8bpp DOS screen to judge.
+  inputtest what a key or a click *means* -- input.c. For the life of the
+            project this was main.c's window procedure and could not be
+            linked here at all; the platform seam (src/plat.h) moved it to a
+            file that knows nothing about messages, and this drives it.
+            Covers the fit (output pixel to stage pixel, and the letterbox
+            rejection, now mr_fit_* in scale.c), the click dispatch order,
+            the 'r' and 'f' hotkeys being claimed ahead of everything, a
+            screen's own `key` beating the default behaviour, Page
+            Up/Down/Backspace/Tab/Ctrl/Escape/the digits, and the wheel.
+            The one worth the whole file is "a click consumed by a button
+            does not cancel a skip": that ordering is what made the quick
+            menu's "Avance rapide" impossible to switch off, and it was
+            previously checked only by eye and mirrored into skiptest's own
+            helper, which could drift from the real thing.
+            Three negative controls are recorded in NOTES.
+            Not covered: mr_plat_capture_mouse and mr_plat_restore_size,
+            because plathost.c's versions do nothing. The 'r' checks assert
+            the property that matters without them -- that nothing
+            downstream sees the key.
+            Two things about writing more of these. A harness must *draw*
+            every frame, not just update: the focus list and the screen-key
+            list are rebuilt during drawing, so an update-only loop aims
+            clicks and keys at a stale frame. And it must wait for a line to
+            finish typing before comparing, since a click on a half-typed
+            line completes it rather than advancing -- both of those cost
+            an afternoon here and produced convincing false failures.
+  vbetest   the VBE mode picker: mr_vbe_decode, which turns one raw 256-byte
+            ModeInfoBlock from int 10h/4F01h into a usable mode or refuses
+            it, and mr_vbe_pick, which chooses between them. Every mode in
+            it is a block built field by field the way a BIOS fills one in,
+            and the card tables are the mode lists real hardware reports --
+            the standard VBE 2.0 set, which has no 16:9 in it at all, and
+            the same card with widescreen modes patched into the OEM range.
+            Covers the refusals (banked-only, text, mono, planar, VBE 1.2
+            with no PhysBasePtr, a sub-byte pixel, a pitch too small for a
+            row) and the two firmware quirks: a blank RsvdMaskSize on a mode
+            that is really 32bpp, which must not shrink the pixel, and VBE
+            3.0's separate linear pitch, which differs from the banked one
+            on cards that pad differently and shears the picture if the
+            wrong one is used.
+            The policy is five lexicographic keys and each has a check:
+            truecolour outranks a larger palettised mode; the biggest
+            *picture* wins rather than the biggest mode, so 1280x1024 beats
+            1024x768 because the letterboxed 16:9 stage is bigger in it; a
+            16:9 mode beats a 4:3 one showing the identical picture; depth
+            chooses between equals; a duplicate resolves to the lower number.
+            This is the part of the DOS port that cannot be debugged on the
+            machine -- a wrong answer is a black screen with no log on it --
+            which is why the judgement lives in a pure file and the int 10h
+            code is next door in vbedos.c with none of it.
+            Three negative controls are recorded in NOTES.
+            vbedos.c is linked but not driven: it compiles to do-nothing
+            functions off DOS, and linking it is what catches a prototype
+            drifting, since no makefile here builds the DOS half.
+            This harness also carries the DOS syntax-only pass, over
+            vbedos.c and presdos.c, against the shim in tools/hostshim/dos.
+            That pass finds typos and nothing else -- the shim's
+            declarations come from the same reading of Watcom's API as the
+            code, so it agrees with any misunderstanding.
+  enumtest  mr_vfs_cat and mr_vfs_join, the bounded builders that replaced
+            two unbounded sprintfs in vfs.c. Neither bug was reachable from
+            here -- one is inside #ifdef _WIN32, the other needs loose mode --
+            which is exactly why the helpers are public rather than static,
+            and why the suite ran green past both for years. The target buffer
+            sits between 0xAA fences so a write past the end is caught at the
+            write. Restoring the old sprintf turns 6 of 22 checks red.
+            Also pins the case the engine depends on: the longest legal loose
+            directory plus the longest legal VFS name (191 + 1 + 255) fits
+            MR_FSPATH_MAX.
+  wavtest   the RIFF/WAVE reader, including two files built to be hostile: a
+            data chunk longer than the file, and a chunk length with the top
+            bit set. The second is a target-only crash -- `long` is 32 bits
+            under Watcom, so the length reads back negative, the chunk walk
+            steps backwards and memcmp reads far outside the buffer. On a
+            64-bit host the same bytes stay positive and nothing happens,
+            which is exactly why it is pinned down here
+
+For the pak-first harnesses listed above:
+
+  /tmp/langtest mrpy.pak "$PWD/tools/harness/fixgame"   # the pak is the game
+
+A loose mount would find no translations at all: the catalogue is located by
+enumerating tl/<lang>/, and mr_vfs_enum only walks loose files on Windows.

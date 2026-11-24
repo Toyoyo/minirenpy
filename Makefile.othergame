@@ -1,0 +1,24 @@
+# Othergame, built by the makefile beside this one.
+#
+#     wmake -f Makefile.othergame          the exe
+#     wmake -f Makefile.othergame data     fonts, cutscenes and other.pak
+#
+# This was a whole copy of Makefile once, and the copies drifted: all three
+# per-game files still said `TARGET = miwa.exe` and `PAK = miwa.pak` long
+# after Makefile moved to mrpy.*, so building any game's data wrote a pak
+# named for a different one. GAME and PAK are the only things that ever
+# differed, so they are all that is left here; the flags, the object list,
+# the header stamp, the libraries and every target come from Makefile, and a
+# change there now reaches all four games.
+#
+# TARGET is deliberately not set: the exe is byte-identical whichever game
+# it is shipped with -- only mrpy.rc's version block differs, and that is
+# shipped per game -- so every build is mrpy.exe.
+#
+# Makefile sets each of these only `!ifndef`, so these win. A command-line
+# macro -- `wmake -f Makefile.othergame PAK=other.pak` -- still beats both.
+
+GAME = ../othergame/game
+PAK  = other.pak
+
+!include Makefile
