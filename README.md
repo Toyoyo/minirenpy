@@ -65,8 +65,10 @@ bound into the executable.
 The build host is Linux with the **Linux-hosted OpenWatcom 2.0** tools
 (`wcc386` emits `.o`, not `.obj`, which is why the object lists say so).
 Python 3 is needed for the data targets, and `ffmpeg` only if a game has video
-cutscenes. zlib, libpng and xvidcore are built from source by the makefile, so
-they match the register calling convention (`-6r`) the engine uses.
+cutscenes.
+
+zlib, libpng and xvidcore are built from source by the makefile, so they match
+the register calling convention (`-6r`) the engine uses.
 
 ### Windows (Win32s / 9x / NT / 10)
 
@@ -177,6 +179,7 @@ displays, autodetected; 16bpp or better is recommended.
 **DOS:** the same CPU, 64MiB of XMS, ~300K conventional under VCPI
 (HIMEM+EMM386) or ~100K under DPMI, a mouse driver, a VBE 2.0 card able to
 give a 640x480x8 linear framebuffer, and a correct `BLASTER` variable.
+
 SB16 avoids downsampling; SB1/SB2/SBPro and ESS1868 all work, the ESS in its
 own 16-bit mode.
 
@@ -333,10 +336,8 @@ audio, once started, cannot be hurried, and a gap in it is far worse than a
 dropped frame. Frames whose moment has passed are decoded and discarded.
 
 **MMX where it pays, CPUID-gated.** YUV-to-RGB conversion and sprite blending
-have hand-written Watcom assembly kernels. Both are behind a `have_simd()`
-that follows xvidcore's own detection, because "the target is a PIII, so
-assume MMX" is exactly the assumption that used to freeze the engine on a
-non-MMX Pentium.
+have claude-written Watcom assembly kernels.
+Both are behind a `have_simd()` that follows xvidcore's own detection.
 
 ---
 
